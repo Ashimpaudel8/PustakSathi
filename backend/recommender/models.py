@@ -8,3 +8,23 @@ class Book(models.Model):
 
     def __str__(self):
         return self.title
+
+class Wishlist(models.Model):
+    user_id = models.IntegerField()
+    book = models.ForeignKey(Book, on_delete=models.CASCADE)
+    
+    class Meta:
+        unique_together = ('user_id', 'book')
+    def __str__(self):
+        return f"Wishlist for User {self.user_id} - Book: {self.book.title}"
+    
+class ReadBook(models.Model):
+    user_id = models.IntegerField()
+    book = models.ForeignKey(Book, on_delete=models.CASCADE)
+  
+    class Meta:
+        unique_together = ('user_id', 'book')
+    def __str__(self):
+        return f"Read Book for User {self.user_id} - Book: {self.book.title}"    
+    
+    
