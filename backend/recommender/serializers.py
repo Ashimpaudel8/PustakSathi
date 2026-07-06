@@ -1,7 +1,7 @@
 from django.contrib.auth.models import User
 from rest_framework import serializers
 import re
-from .models import Book
+from .models import Book, ReadBooks
 
 class UserSerializer(serializers.ModelSerializer):
     class Meta:
@@ -40,3 +40,9 @@ class BookSerializer(serializers.ModelSerializer):
     class Meta:
         model = Book
         fields = ["id", "isbn", "title"]
+
+class ReadBooksSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = ReadBooks
+        fields = ["id", "user", "book", "created_at"]
+        read_only_fields = ["id", "user", "book", "created_at"]
