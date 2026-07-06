@@ -4,8 +4,6 @@ from . import views
 
 urlpatterns = [
     path("books/search/", views.ReadBookView.as_view(), name="search-recommend"),
-    # Custom Superuser Admin workspace
-    # Superuser Dashboard Panel Routing Target Endpoints
     path("admin-panel/books/", views.admin_books_resource, name="admin_books"),
     path(
         "admin-panel/books/<int:book_id>/",
@@ -18,12 +16,7 @@ urlpatterns = [
         views.admin_delete_user,
         name="admin_delete_user",
     ),
-    # #jwt backendd
-    # # JWT Default Login Route (Returns access & refresh tokens given a username + password)
-    # path('api/auth/login/', TokenObtainPairView.as_view(), name='token_obtain_pair'),
-    # # JWT Refresh Route (Pass a refresh token here to get a brand new active access token)
-    # path('api/auth/token/refresh/', TokenRefreshView.as_view(), name='token_refresh'),
-    # # Custom endpoints
-    # path('auth/signup/', views.api_signup, name='api_signup'),
-    # path('auth/status/', views.api_auth_status, name='api_auth_status'),
+    path("books/recommend/", views.get_recommendation_view, name="books-recommend"),
+    path("readbooks/", views.ReadBooksListCreate.as_view(), name="readbooks-list"),
+    path("readbooks/delete/<int:pk>", views.ReadBooksDelete.as_view(), name="readbooks-delete"),
 ]

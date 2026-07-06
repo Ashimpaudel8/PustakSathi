@@ -5,7 +5,8 @@ function Home() {
         <>
             <Link to="/login">Login</Link><br/>
             <Link to="/register">Register</Link><br/>
-            <Link to="/dashboard">Dashboard</Link>
+            <Link to="/dashboard">Dashboard</Link><br/>
+            <Link to="/readbooks">Read Books</Link>
         </>
     );
 }

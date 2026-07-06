@@ -5,6 +5,7 @@ import Login from "./pages/Login";
 import Register from "./pages/Register";
 import Dashboard from "./pages/Dashboard";
 import ProtectedRoute from "./components/ProtectedRoute";
+import ReadBooks from "./pages/ReadBooks";
 import ManageBackend from "./components/ManageBackend";
 
 function Logout() {
@@ -23,6 +24,7 @@ function App() {
         <Route path="/" element={<Home />} />
         <Route path="/login" element={<Login />} />
         <Route path="/logout" element={<Logout />} />
+        <Route path="/readbooks" element={<ReadBooks />} />
         <Route path="/register" element={<RegisterAndLogout />} />
         {/* 🔐 Protected User Dashboard */}
       <Route 
