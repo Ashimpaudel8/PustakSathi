@@ -41,8 +41,8 @@ function Form({ route, method }) {
         <div id="root" className="flex centre min-h-screen root-div">
             <div className="div-container">
                 {method === "login" ?
-                    <h2 className="text-centre">Welcome Back</h2> :
-                    <h2 className="text-centre">Create Account</h2>
+                    <h2 className="text-centre h2-auth">Welcome Back</h2> :
+                    <h2 className="text-centre h2-auth">Create Account</h2>
                 }
                 {method === "login" ?
                     <p className="text-centre p-top">Login to manage your tasks</p> :
@@ -61,8 +61,9 @@ function Form({ route, method }) {
                         </div>
                     </div>}
                     <div>
-                        <label className="flex-column">Username</label>
+                        <label className="flex-column label-auth">Username</label>
                         <input
+                            className="input-auth"
                             type="text"
                             placeholder={method === "login" ? "Enter your username" : "Create a new username"}
                             value={username}
@@ -70,9 +71,10 @@ function Form({ route, method }) {
                         />
                     </div>
                     <div>
-                        <label className="flex-column">Password</label>
+                        <label className="flex-column label-auth">Password</label>
                         <input
-                            type="Enter your password"
+                            className="input-auth"
+                            type="password"
                             placeholder={method === "login" ? "Enter your password" : "Create a new password"}
                             value={password}
                             onChange={(e) => setPassword(e.target.value)}
