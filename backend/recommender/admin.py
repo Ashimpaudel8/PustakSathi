@@ -1,10 +1,17 @@
 from django.contrib import admin
-from .models import Book, Wishlist, ReadBooks
+from .models import Book, ReadBooks, Wishlist
 
 @admin.register(Book)
 class BookAdmin(admin.ModelAdmin):
     list_display = ("title", "isbn")
     search_fields = ("title", "isbn")
 
-admin.site.register(Wishlist)
-admin.site.register(ReadBooks)
+@admin.register(ReadBooks)
+class ReadBooksAdmin(admin.ModelAdmin):
+    list_display = ("user", "book")
+    search_fields = ("user__username", "book__title")
+
+@admin.register(Wishlist)
+class WishlistAdmin(admin.ModelAdmin):
+    list_display = ("user", "book")
+    search_fields = ("user__username", "book__title")
