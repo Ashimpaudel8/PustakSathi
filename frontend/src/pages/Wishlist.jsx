@@ -4,19 +4,19 @@ import BookTile from "../components/BookTile";
 import RecommendedList from "../components/RecommendedList";
 import { Link } from "react-router-dom";
 
-function ReadBooks() {
-  const [readBooks, setReadBooks] = useState([]);
+function Wishlist() {
+  const [wishlist, setWishlist] = useState([]);
   const [recommendations, setRecommendations] = useState([]);
   const [isRecommending, setIsRecommending] = useState(null);
 
   const handleDelete = (e, book) => {
     e.preventDefault();
     api
-      .delete(`/api/readbooks/delete/${book.readbook_id}/`)
+      .delete(`/api/wishlist/delete/${book.wishlist_id}/`)
       .then((res) => {
         console.log("Delete Success!!", res.data);
-        setReadBooks((prevBooks) =>
-          prevBooks.filter((b) => b.readbook_id !== book.readbook_id),
+        setWishlist((prevBooks) =>
+          prevBooks.filter((b) => b.wishlist_id !== book.wishlist_id),
         );
       })
       .catch((err) => {
@@ -24,21 +24,24 @@ function ReadBooks() {
       });
   };
 
-  useEffect(() => {
+  const fetchWishlist = () => {
     api
-      .get("/api/readbooks/")
+      .get("/api/wishlist/")
       .then((res) => {
-        setReadBooks(res.data.ReadBooks);
-        console.log(res.data.ReadBooks);
+        setWishlist(res.data.Wishlists);
       })
       .catch((err) => {
         console.error("Error fetching books:", err);
       });
+  };
+
+  useEffect(() => {
+    fetchWishlist();
   }, []);
 
   const handleGetRecommendations = (e) => {
     e.preventDefault();
-    if (readBooks.length === 0) {
+    if (wishlist.length === 0) {
       setRecommendations([]);
       return;
     }
@@ -46,7 +49,7 @@ function ReadBooks() {
     const handler = setTimeout(() => {
       setIsRecommending(true);
       api
-        .post("/api/readbooks/recommend/", { readbooks: readBooks })
+        .post("/api/wishlist/recommend/", { wishlists: wishlist })
         .then((res) => setRecommendations(res.data.Recommendations))
         .finally(() => setIsRecommending(false));
     }, 2000); // Wait 1 second before calling the API
@@ -56,12 +59,12 @@ function ReadBooks() {
 
   return (
     <>
-      <Link to="/wishlist">Wishlist</Link>
+      <Link to="/readbooks">Read Books</Link>
       <br />
       <br />
       <Link to="/dashboard">Dashboard</Link>
       <br />
-      <h1>Read Books :</h1>
+      <h1>Wishlist :</h1>
       <div
         style={{
           display: "grid",
@@ -69,13 +72,15 @@ function ReadBooks() {
           gap: "20px",
         }}
       >
-        {readBooks.map((book) => {
+        {wishlist.map((book) => {
           return (
             <BookTile
               key={book.isbn}
               book={book}
               action1={
-                <button onClick={(e) => handleDelete(e, book)}>Delete</button>
+                <button onClick={(e) => handleDelete(e, book)}>
+                  Remove From Wishlist
+                </button>
               }
             />
           );
@@ -85,12 +90,11 @@ function ReadBooks() {
       <button onClick={handleGetRecommendations}>Get Recommendations</button>
       <RecommendedList
         recommendations={recommendations}
-        setreadbooks={setReadBooks}
-        recommendations={recommendations}
+        setwishlist={setWishlist}
         setRecommendations={setRecommendations}
       />
     </>
   );
 }
 
-export default ReadBooks;
+export default Wishlist;

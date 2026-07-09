@@ -1,6 +1,4 @@
-
-
-function BookTile({ book, action }) {
+function BookTile({ book, action1, action2 }) {
   return (
     <>
       <div
@@ -9,7 +7,10 @@ function BookTile({ book, action }) {
           padding: "10px",
         }}
       >
-        {action}
+        <div style={{ display: "flex", gap: "10px", marginBottom: "10px" }}>
+          {action1}
+          {action2}
+        </div>
         <img
           src={
             book.thumbnail_url
@@ -24,7 +25,13 @@ function BookTile({ book, action }) {
         <div> Publisher : {book.publisher}</div>
         <div> Published Date : {book.publishedDate}</div>
         <div> Categories : {book.categories.join(", ")}</div>
-        <div> Description : {book.description}</div>
+        {book.rating && (
+          <>
+            <hr />
+            <div> Your Rating : {book.rating}</div>
+            <div> Your Review : {book.review || "N/A"}</div>
+          </>
+        )}
       </div>
     </>
   );

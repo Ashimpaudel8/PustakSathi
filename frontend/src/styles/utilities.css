@@ -1,0 +1,20 @@
+.flex {
+    display: flex;
+}
+
+.centre {
+    justify-content: center;
+    align-items: center;
+}
+
+.mt-2 {
+    margin-top: 2rem;
+}
+
+.min-h-screen {
+    min-height: 100vh;
+}
+
+.text-centre {
+    text-align: center;
+}
