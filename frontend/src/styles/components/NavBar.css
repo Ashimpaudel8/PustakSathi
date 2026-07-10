@@ -1,0 +1,106 @@
+.navbar {
+    background: linear-gradient(180deg, #0d4f4f 0%, #114f4f 100%);
+    color: white;
+    min-height: 80px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.nav-link {
+    color: #9abcbc;
+    text-decoration: none;
+    font-weight: 700;
+    transition: color 0.15s ease;
+}
+
+.nav-link:hover {
+  color: #d0e8e8;
+}
+
+.home-link {
+    position: relative;
+    left: 45px;
+}
+
+.logo {
+    width: auto;
+    height: 65px;
+}
+
+.nav-container {
+    justify-content: flex-end;
+    font-size: 20px;
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+}
+
+.nav-user-trigger {
+    background: #00555a;
+    border: 2px solid #ffa602;
+    border-radius: 20px;
+    padding: 7px 15px 7px 15px;
+    margin: 0px 25px 0px 5px;
+    font-size: 16px;
+    color: #ffa602;
+    cursor: pointer;
+    min-width: 25px;
+    display: flex;
+    gap: 8px;
+}
+
+.dropdown-menu {
+    position: absolute;
+    top: 100%;
+    right: 15px;
+    margin-top: 0.5rem;
+    background: white;
+    color: black;
+    border: 1px solid #ddd;
+    border-radius: 6px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+    width: max-content;
+    max-width: 50vw; 
+    z-index: 10;
+    font-size: 16px;
+}
+
+.content-dropdown {
+    border-bottom: 1px solid gray;
+    padding: 7px;
+}
+
+.dropdown-button {
+    color: #e94560;
+    background: inherit;
+    cursor: pointer;
+    border: none;
+    font-size: inherit;
+    padding: 7px;
+    display: flex;
+    gap: 9px;
+}
+
+.logout-div {
+    background: white;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+.logout-div:hover {
+    background: #fff5f5;
+}
+
+.fa-solid {
+    position: relative;
+    top: 1.5px
+    
+}
+
+.loggedout-div {
+    font-size: 18px;
+    width: 18%;
+    display: flex;
+    justify-content: space-evenly;
+}

@@ -1,4 +1,4 @@
-import json
+import json, time, requests, re, os,string, pickle, json
 from rest_framework.decorators import api_view, permission_classes
 from django.contrib.auth.models import User
 from rest_framework import generics
@@ -11,7 +11,6 @@ from rest_framework.response import Response
 from concurrent.futures import ThreadPoolExecutor
 from sklearn.metrics.pairwise import cosine_similarity
 import numpy as np
-import requests, re, os,string, pickle, json
 
 from dotenv import load_dotenv
 load_dotenv()
@@ -149,7 +148,6 @@ def get_book_detail(title, author, description, isbn):
     for search_title in search_titles:
 
         try:
-            headers = {'User-Agent': 'AlexBookRecommender/1.0 (contactalex234@gmail.com)'}
             response_open = requests.get(
                 "https://openlibrary.org/search.json",
                 params={
@@ -158,6 +156,7 @@ def get_book_detail(title, author, description, isbn):
                 },
                 timeout=5,
             )
+            time.sleep(0.2)
 
             response_open.raise_for_status()
 
@@ -519,6 +518,21 @@ def get_wishlist_recommendation_view(request):
 
     return Response({"Recommendations": response_list})
 
+
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
+def me(request):
+    user = request.user
+    wishlists_count = Wishlist.objects.filter(user = user).count()
+    readbooks_count = ReadBooks.objects.filter(user = user).count()
+    id = user.id
+    username = user.username
+    return Response({
+        "id": id,
+        "username": username,
+        "wishlists_count": wishlists_count,
+        "readbooks_count": readbooks_count,
+    })
 
 
 

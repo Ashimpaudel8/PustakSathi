@@ -4,13 +4,16 @@ import { useNavigate } from "react-router-dom";
 import { Access_Token, Refresh_Token } from "../constants";
 import "../styles/components/AuthForm.css"
 import { Link } from "react-router-dom";
+import { useAuth } from "../context/AuthContext";
 
 function Form({ route, method }) {
     const [username, setUsername] = useState("")
     const [password, setPassword] = useState("")
     const [loading, setLoading] = useState(false)
     const [error, setError] = useState("")
+    const [showPassword, setShowPassword] = useState(false);
     const navigate = useNavigate()
+    const { login } = useAuth()
 
     const handleSubmit = async (e) => {
         e.preventDefault()
@@ -19,8 +22,7 @@ function Form({ route, method }) {
         try {
             const res = await api.post(route, { username, password })
             if (method === "login") {
-                localStorage.setItem(Access_Token, res.data.access);
-                localStorage.setItem(Refresh_Token, res.data.refresh);
+                await login(res.data);
                 navigate("/dashboard");
 
             }
@@ -49,7 +51,7 @@ function Form({ route, method }) {
                     <p className="text-centre p-top">Sign up to get started</p>
                 }
                 <form className="flex-column" onSubmit={handleSubmit}>
-                    {error &&<div className="error-div">
+                    {error && <div className="error-div">
                         <div>
                             {error.detail && <p>{`Error: ${error.detail}`}</p>}
                         </div>
@@ -65,20 +67,34 @@ function Form({ route, method }) {
                         <input
                             className="input-auth"
                             type="text"
-                            placeholder={method === "login" ? "Enter your username" : "Create a new username"}
+                            placeholder={method === "login" ?
+                                "Enter your username" :
+                                "Create a new username"}
                             value={username}
                             onChange={(e) => setUsername(e.target.value)}
                         />
                     </div>
-                    <div>
+                    <div className="password-container">
                         <label className="flex-column label-auth">Password</label>
                         <input
                             className="input-auth"
-                            type="password"
-                            placeholder={method === "login" ? "Enter your password" : "Create a new password"}
+                            type={showPassword ? "text" : "password"}
+                            placeholder={method === "login" ?
+                                "Enter your password" :
+                                "Create a new password"}
                             value={password}
                             onChange={(e) => setPassword(e.target.value)}
                         />
+                        {password.length > 0 && (
+                            <button
+                                type="button"
+                                className="toggle-password"
+                                onClick={() => { setShowPassword(!showPassword) }}
+                            >
+                                {showPassword ? <i class="fa-solid fa-eye"></i>  : <i class="fa-solid fa-eye-slash"></i> }
+                            </button>
+                        )
+                        }
                     </div>
                     {method === "login" ?
                         <button type="submit" className="submit-button">Login</button> :

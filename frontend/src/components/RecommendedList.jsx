@@ -2,6 +2,7 @@ import { useState } from "react";
 import BookTile from "./BookTile";
 import RatingModal from "./RatingModal";
 import api from "../api";
+import { useAuth } from "../context/AuthContext";
 
 function RecommendedList({
   recommendations,
@@ -10,6 +11,7 @@ function RecommendedList({
   setreadbooks,
 }) {
   const [ratingModalBook, setRatingModalBook] = useState(null);
+  const { fetchUser } = useAuth();
 
   const handleMarkAsRead = (e, book) => {
     e.preventDefault();
@@ -35,6 +37,7 @@ function RecommendedList({
             b.isbn === book.isbn ? { ...b, is_wishlisted: true } : b,
           ),
         );
+        fetchUser();
       })
       .catch((err) => {
         console.error(err);
@@ -68,6 +71,7 @@ function RecommendedList({
               : book,
           ),
         );
+        fetchUser();
       });
     setRatingModalBook(null);
   };
@@ -108,17 +112,17 @@ function RecommendedList({
               book.is_wishlisted ? (
                 <button
                   title="Wishlist"
-                  style={{ fontSize: "18px", cursor: "pointer" }}
+                  style={{ cursor: "pointer", fontSize: "18px", color: "red" }}
                 >
-                  ❤️
+                  <i class="fa-solid fa-heart"></i>
                 </button>
               ) : (
                 <button
                   title="Wishlist"
-                  style={{ color: "red", fontSize: "28px", cursor: "pointer" }}
+                  style={{ color: "red", fontSize: "18px", cursor: "pointer" }}
                   onClick={(e) => handleWishlist(e, book)}
                 >
-                  ♡
+                  <i class="fa-regular fa-heart"></i>
                 </button>
               )
             }

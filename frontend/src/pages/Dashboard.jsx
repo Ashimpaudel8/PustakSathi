@@ -2,19 +2,18 @@ import { useState } from "react";
 import SearchBar from "../components/SearchBar";
 import RecommendedList from "../components/RecommendedList";
 import { Link } from "react-router-dom";
+import { useLocation } from "react-router-dom";
 
-function Dashboard( {setRecommendations, recommendations} ) {
+function Dashboard({ setRecommendations, recommendations }) {
+  const location = useLocation();
+  const focusSearch = location.state?.focusSearch;
 
   return (
     <>
-      <Link to="/readbooks">Read Books</Link>
-      <br />
-      <br />
-      <Link to="/wishlist">Wishlist</Link>
-      <br />
-      <br />
-
-      <SearchBar setRecommendations={setRecommendations} />
+      <SearchBar
+        setRecommendations={setRecommendations}
+        focusSearch={focusSearch}
+      />
       <h1>Recommendations : </h1>
       <RecommendedList
         recommendations={recommendations}

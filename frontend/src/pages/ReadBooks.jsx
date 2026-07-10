@@ -3,11 +3,13 @@ import api from "../api";
 import BookTile from "../components/BookTile";
 import RecommendedList from "../components/RecommendedList";
 import { Link } from "react-router-dom";
+import { useAuth } from "../context/AuthContext";
 
 function ReadBooks() {
   const [readBooks, setReadBooks] = useState([]);
   const [recommendations, setRecommendations] = useState([]);
   const [isRecommending, setIsRecommending] = useState(null);
+  const { fetchUser } = useAuth();
 
   const handleDelete = (e, book) => {
     e.preventDefault();
@@ -18,6 +20,7 @@ function ReadBooks() {
         setReadBooks((prevBooks) =>
           prevBooks.filter((b) => b.readbook_id !== book.readbook_id),
         );
+        fetchUser();
       })
       .catch((err) => {
         console.log("Error encountered:", err);
@@ -56,11 +59,6 @@ function ReadBooks() {
 
   return (
     <>
-      <Link to="/wishlist">Wishlist</Link>
-      <br />
-      <br />
-      <Link to="/dashboard">Dashboard</Link>
-      <br />
       <h1>Read Books :</h1>
       <div
         style={{

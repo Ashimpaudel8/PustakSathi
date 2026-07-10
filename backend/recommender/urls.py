@@ -24,4 +24,5 @@ urlpatterns = [
     path("wishlist/delete/<int:pk>/", views.WishlistDelete.as_view(), name="wishlist-delete"),
     path("wishlist/recommend/", views.get_wishlist_recommendation_view, 
          name="wishlist-recommend"),
+    path("user/me/", views.me, name="me"),
 ]

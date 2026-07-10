@@ -1,7 +1,15 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import api from "../api";
 
-function SearchBar({ setRecommendations }) {
+function SearchBar({ setRecommendations, focusSearch }) {
+  const inputRef = useRef(null);
+
+  useEffect(() => {
+    if (focusSearch) {
+      inputRef.current?.focus();
+    }
+  }, [focusSearch]);
+
   const [search, setSearch] = useState("");
   const [books, setBooks] = useState([]);
   const [showSuggestions, setShowSuggestions] = useState(true);
@@ -41,7 +49,7 @@ function SearchBar({ setRecommendations }) {
       );
       setRecommendations(res.data.Recommendations);
     } catch (err) {
-        console.error(err)
+      console.error(err)
     }
   };
 
@@ -56,8 +64,12 @@ function SearchBar({ setRecommendations }) {
 
   return (
     <>
-      <input type="text" value={search} onChange={handleChange} />
-
+      <input 
+      ref={inputRef}
+      type="text" 
+      value={search} 
+      placeholder="Search to recommend.." 
+      onChange={handleChange} />
       {showSuggestions && (
         <div>
           {books.map((book) => (

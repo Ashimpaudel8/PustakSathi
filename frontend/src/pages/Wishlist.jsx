@@ -3,11 +3,13 @@ import api from "../api";
 import BookTile from "../components/BookTile";
 import RecommendedList from "../components/RecommendedList";
 import { Link } from "react-router-dom";
+import { useAuth } from "../context/AuthContext";
 
 function Wishlist() {
   const [wishlist, setWishlist] = useState([]);
   const [recommendations, setRecommendations] = useState([]);
   const [isRecommending, setIsRecommending] = useState(null);
+  const { fetchUser } = useAuth();
 
   const handleDelete = (e, book) => {
     e.preventDefault();
@@ -18,6 +20,7 @@ function Wishlist() {
         setWishlist((prevBooks) =>
           prevBooks.filter((b) => b.wishlist_id !== book.wishlist_id),
         );
+        fetchUser();
       })
       .catch((err) => {
         console.log("Error encountered:", err);
@@ -52,19 +55,14 @@ function Wishlist() {
         .post("/api/wishlist/recommend/", { wishlists: wishlist })
         .then((res) => setRecommendations(res.data.Recommendations))
         .finally(() => setIsRecommending(false));
-    }, 2000); // Wait 1 second before calling the API
+    }, 2000);
 
     return () => clearTimeout(handler);
   };
 
   return (
     <>
-      <Link to="/readbooks">Read Books</Link>
-      <br />
-      <br />
-      <Link to="/dashboard">Dashboard</Link>
-      <br />
-      <h1>Wishlist :</h1>
+      <h1>Wishlists :</h1>
       <div
         style={{
           display: "grid",

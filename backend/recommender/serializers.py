@@ -14,6 +14,10 @@ class UserSerializer(serializers.ModelSerializer):
             raise serializers.ValidationError(
                 "Password must be at least 8 characters."
             )
+        if re.search(r"\s", value):
+            raise serializers.ValidationError(
+                "Password cannot contain spaces."
+            )
         if not re.search(r"[A-Z]", value):
             raise serializers.ValidationError(
                 "Password must contain an uppercase letter."
