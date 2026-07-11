@@ -1,4 +1,4 @@
-import json, time, requests, re, os,string, pickle, json
+import json, time, requests, re, os, string, pickle, json
 from rest_framework.decorators import api_view, permission_classes
 from django.contrib.auth.models import User
 from rest_framework import generics
@@ -11,6 +11,7 @@ from rest_framework.response import Response
 from concurrent.futures import ThreadPoolExecutor
 from sklearn.metrics.pairwise import cosine_similarity
 import numpy as np
+from django.core.cache import cache
 
 from dotenv import load_dotenv
 load_dotenv()
@@ -54,17 +55,22 @@ class ReadBookView(generics.ListAPIView):
         return Book.objects.filter(title__icontains=query)[:10]
 
 
+CACHE_TIMEOUT_HIT = 60 * 60    # 1 hour — successful lookups (found thumbnail)
+CACHE_TIMEOUT_MISS = 60 * 5    # 5 minutes — nothing found, retry sooner
+
+
 def normalize_title(title):
-        return (
-            str(title)
-            .strip()
-            .lower()
-            .translate(str.maketrans("", "", string.punctuation))
-        )
+    return (
+        str(title)
+        .strip()
+        .lower()
+        .translate(str.maketrans("", "", string.punctuation))
+    )
+
 
 def clean_title(title):
     title = re.sub(r"\s*\(.*?\)", "", title)
-    title = re.sub(r"#\d+", "", title) 
+    title = re.sub(r"#\d+", "", title)
     # Remove subtitle after colon
     title = title.split(":")[0]
     title = str(title).lower()
@@ -74,7 +80,23 @@ def clean_title(title):
     title = " ".join(title.split())
     return title.strip()
 
+
 def get_book_detail(title, author, description, isbn):
+    cache_key = f"book_detail:isbn:{isbn}"
+
+    cached_result = cache.get(cache_key)
+    if cached_result is not None:
+        return cached_result
+
+    result = _fetch_book_detail_fresh(title, author, description, isbn)
+
+    found_something = bool(result["thumbnail_url"] or result["thumbnail_id"])
+    timeout = CACHE_TIMEOUT_HIT if found_something else CACHE_TIMEOUT_MISS
+
+    cache.set(cache_key, result, timeout)
+    return result
+
+def _fetch_book_detail_fresh(title, author, description, isbn):
 
     data_dict = {
         "isbn": isbn,

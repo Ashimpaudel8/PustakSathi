@@ -74,7 +74,7 @@ const NavBar = () => {
                                         }}
                                         className="dropdown-button"
                                     >
-                                        <i class="fa-solid fa-arrow-right-from-bracket"></i>
+                                        <i className="fa-solid fa-arrow-right-from-bracket"></i>
                                         Logout
                                     </button>
                                 </div>
