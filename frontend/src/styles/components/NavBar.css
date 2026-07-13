@@ -1,10 +1,15 @@
 .navbar {
     background: linear-gradient(180deg, #0d4f4f 0%, #114f4f 100%);
     color: white;
-    min-height: 80px;
+    height: 80px;
     display: flex;
     justify-content: space-between;
     align-items: center;
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    box-sizing: border-box;
 }
 
 .nav-link {

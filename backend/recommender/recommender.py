@@ -10,6 +10,7 @@ import pickle
 import string
 from sklearn.feature_extraction.text import TfidfVectorizer
 from .models import Book
+from . import data_store
 
 import nltk
 from nltk.corpus import stopwords
@@ -51,3 +52,5 @@ def rebuild_recommendation_data():
         pickle.dump(indices_title, f)
     with open(os.path.join(PKL_DIR, "indices_isbn.pkl"), "wb") as f:
         pickle.dump(indices_isbn, f)
+
+    data_store.load_data()

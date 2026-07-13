@@ -2,8 +2,10 @@
     width: 200px;
     padding: 10px 2px 2px 10px;
     background: #155E5E;
-    min-height: calc(100vh - 80px);
+    height: calc(100vh - 80px);
     transition: width 0.25s ease;
+    position: sticky;
+    top: 80px;
 }
 
 .sidebar.collapsed {

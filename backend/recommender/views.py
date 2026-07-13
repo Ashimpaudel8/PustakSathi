@@ -12,28 +12,12 @@ from concurrent.futures import ThreadPoolExecutor
 from sklearn.metrics.pairwise import cosine_similarity
 import numpy as np
 from django.core.cache import cache
+from . import data_store
 
 from dotenv import load_dotenv
 load_dotenv()
 
 api_key = os.getenv("GOOGLE_BOOKS_API_KEY")
-
-try:
-    with open("recommender/pickle_models/indices_title.pkl", "rb") as f:
-        indices_title = pickle.load(f)
-
-    with open("recommender/pickle_models/vectorized_matrix.pkl", "rb") as f:
-        vectorized_matrix = pickle.load(f)
-
-    with open("recommender/pickle_models/df.pkl", "rb") as f:
-        combined_df = pickle.load(f)
-
-except FileNotFoundError:
-    print("Recommendation pkl files not found yet — recommendations disabled until pipeline runs.")
-    vectorized_matrix = None
-    combined_df = None
-    indices_title = None
-
 
 
 class CreateUserView(generics.CreateAPIView):
@@ -199,16 +183,24 @@ def _fetch_book_detail_fresh(title, author, description, isbn):
 
 
 @api_view(['GET'])
-@permission_classes([IsAuthenticated])
+@permission_classes([AllowAny])
 def get_recommendation_view(request):
 
-    title = request.query_params.get("q", "").strip()    
-    titles = [title]
+    title = request.query_params.get("q", "").strip()
+    isbn = request.query_params.get("i", "").strip()
 
-    selected_idx = [
-        indices_title.get(normalize_title(title), None)
-        for title in titles
-    ]
+    if isbn:
+        selected_idx = [
+            data_store.indices_isbn.get(isbn.strip(), None)
+        ]
+
+    elif title:
+        titles = [title]
+
+        selected_idx = [
+            data_store.indices_title.get(normalize_title(title), None)
+            for title in titles
+        ]
 
     selected_idx = [idx for idx in selected_idx if idx is not None]
 
@@ -217,8 +209,8 @@ def get_recommendation_view(request):
             {"Recommendations": []}
         )
     
-    user_vector = np.asarray(vectorized_matrix[selected_idx].mean(axis=0))
-    sim_score = cosine_similarity(user_vector, vectorized_matrix)[0]
+    user_vector = np.asarray(data_store.vectorized_matrix[selected_idx].mean(axis=0))
+    sim_score = cosine_similarity(user_vector, data_store.vectorized_matrix)[0]
     sim_score[selected_idx] = -1
     sim_idx = np.argsort(sim_score)[::-1][:100]
 
@@ -227,7 +219,7 @@ def get_recommendation_view(request):
 
     for idx in sim_idx:
 
-        book = combined_df.iloc[idx]
+        book = data_store.combined_df.iloc[idx]
 
         key = clean_title(book["title"])
 
@@ -246,7 +238,7 @@ def get_recommendation_view(request):
         if len(books) == 4:
             break
 
-    with ThreadPoolExecutor(max_workers=2) as executor:
+    with ThreadPoolExecutor(max_workers=10) as executor:
         response_list = list(
             executor.map(
                 lambda book: get_book_detail(
@@ -338,9 +330,9 @@ def get_readbooks_recommendation_view(request):
     ratings = [item.get("rating") for item in posts]
 
     selected_idx = [
-        indices_title[normalize_title(title)]
+        data_store.indices_title[normalize_title(title)]
         for title in titles
-        if normalize_title(title) in indices_title
+        if normalize_title(title) in data_store.indices_title
     ]
     
     if not selected_idx:
@@ -351,12 +343,12 @@ def get_readbooks_recommendation_view(request):
     weights = np.array(ratings)
 
     user_vector = np.average(
-        vectorized_matrix[selected_idx].toarray(),
+        data_store.vectorized_matrix[selected_idx].toarray(),
         axis=0,
         weights=weights,
     ).reshape(1, -1)
 
-    sim_score = cosine_similarity(user_vector, vectorized_matrix)[0]
+    sim_score = cosine_similarity(user_vector, data_store.vectorized_matrix)[0]
     sim_score[selected_idx] = -1
     sim_idx = np.argsort(sim_score)[::-1][:100]
 
@@ -365,7 +357,7 @@ def get_readbooks_recommendation_view(request):
 
     for idx in sim_idx:
 
-        book = combined_df.iloc[idx]
+        book = data_store.combined_df.iloc[idx]
 
         key = clean_title(book["title"])
 
@@ -384,7 +376,7 @@ def get_readbooks_recommendation_view(request):
         if len(books) == 4:
             break
 
-    with ThreadPoolExecutor(max_workers=2) as executor:
+    with ThreadPoolExecutor(max_workers=10) as executor:
         response_list = list(
             executor.map(
                 lambda book: get_book_detail(
@@ -473,9 +465,9 @@ def get_wishlist_recommendation_view(request):
     titles = ([item.get("title")] for item in posts)
 
     selected_idx = [
-        indices_title[normalize_title(title)]
+        data_store.indices_title[normalize_title(title)]
         for title in titles
-        if normalize_title(title) in indices_title
+        if normalize_title(title) in data_store.indices_title
     ]
     
     if not selected_idx:
@@ -483,8 +475,8 @@ def get_wishlist_recommendation_view(request):
             {"Recommendations": []}
         )
     
-    user_vector = np.asarray(vectorized_matrix[selected_idx].mean(axis=0))
-    sim_score = cosine_similarity(user_vector, vectorized_matrix)[0]
+    user_vector = np.asarray(data_store.vectorized_matrix[selected_idx].mean(axis=0))
+    sim_score = cosine_similarity(user_vector, data_store.vectorized_matrix)[0]
     sim_score[selected_idx] = -1
     sim_idx = np.argsort(sim_score)[::-1][:100]
 
@@ -493,7 +485,7 @@ def get_wishlist_recommendation_view(request):
 
     for idx in sim_idx:
 
-        book = combined_df.iloc[idx]
+        book = data_store.combined_df.iloc[idx]
 
         key = clean_title(book["title"])
 
@@ -512,7 +504,7 @@ def get_wishlist_recommendation_view(request):
         if len(books) == 4:
             break
 
-    with ThreadPoolExecutor(max_workers=2) as executor:
+    with ThreadPoolExecutor(max_workers=10) as executor:
         response_list = list(
             executor.map(
                 lambda book: get_book_detail(
@@ -555,6 +547,12 @@ def me(request):
         "wishlists_count": wishlists_count,
         "readbooks_count": readbooks_count,
     })
+
+
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
+def get_single_book_detail():
+    pass
 
 
 
