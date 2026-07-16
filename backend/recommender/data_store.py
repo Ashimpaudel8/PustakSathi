@@ -1,4 +1,3 @@
-# recommender/data_store.py
 import os
 import pickle
 

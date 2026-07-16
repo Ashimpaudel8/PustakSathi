@@ -34,7 +34,6 @@ function RegisterAndLogout() {
 }
 
 function App() {
-  const [recommendations, setRecommendations] = useState([]);
   return (
     <>
       <NavBar />
@@ -49,7 +48,7 @@ function App() {
             path="/dashboard"
             element={
               <ProtectedRoute>
-                <Dashboard recommendations={recommendations} setRecommendations={setRecommendations} />
+                <Dashboard />
               </ProtectedRoute>
             }
           />
@@ -57,7 +56,7 @@ function App() {
             path="/wishlist"
             element={
               <ProtectedRoute>
-                <Wishlist recommendations={recommendations} setRecommendations={setRecommendations} />
+                <Wishlist />
               </ProtectedRoute>
             }
           />
@@ -65,7 +64,7 @@ function App() {
             path="/readbooks"
             element={
               <ProtectedRoute>
-                <ReadBooks recommendations={recommendations} setRecommendations={setRecommendations} />
+                <ReadBooks />
               </ProtectedRoute>
             }
           />

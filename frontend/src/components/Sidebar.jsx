@@ -1,7 +1,7 @@
 import React from 'react'
 import { NavLink } from 'react-router-dom'
-import "../styles/components/Sidebar.css"
 import { useState } from 'react';
+import "../styles/components/Sidebar.css"
 
 function SideBar() {
   const [collapsed, setCollapsed] = useState(false);

@@ -1,0 +1,59 @@
+.singlebook-div {
+    display: flex;
+    border: 2px solid #155E5E;
+    border-radius: 10px;
+    padding: 10px;
+}
+
+.singleimg-div {
+    height: 420px;
+    margin-right: 20px;
+}
+
+.singleimg-div>img {
+    height: 100%;
+    object-fit: cover;
+    display: block;
+}
+
+.singlebook-metadata {
+    margin-left: 10px;
+    padding-top: 20px;
+    font-family: "Inter", sans-serif;
+    font-size: 15px;
+}
+
+.singlebook-metadata .title {
+    font-size: 22px;
+    font-weight: 700;
+    margin: 5px 0px;
+}
+
+.singlebook-metadata .isbn {
+    font-weight: 600;
+    margin: 5px 0px;
+}
+
+.singlebook-metadata .detail {
+    color: #475363;
+    margin: 3px 0px;
+    font-weight: 400;
+}
+
+.singlebook-metadata hr {
+    border: none;
+    height: 2px;
+    background-color: #595959;
+    margin: 10px 0;
+}
+
+.singlebook-metadata .description {
+    margin: 8px 0px;
+    font-size: 22px;
+    font-weight: 700;
+}
+.singlebook-metadata .description-text {
+    margin: 3px 0px;
+    font-size: 16px;
+    color: #334155;
+}

@@ -14,3 +14,16 @@
 .text-centre {
     text-align: center;
 }
+
+.get-recommend-btn {
+    font-size: 16px;
+    border: 3px solid #1245fc;
+    border-radius: 15px;
+    cursor: pointer;
+    padding: 5px;
+    color: #1245fc;
+    font-size: 18px;
+    font-weight: 800;
+    background: #99de33;
+    margin: 15px;
+}

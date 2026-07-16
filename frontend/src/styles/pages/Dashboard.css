@@ -1,0 +1,13 @@
+.search-container {
+    position: sticky;
+    top: 90px;
+    z-index: 100;
+    padding: 10px 0;
+    background: rgb(237, 237, 237);
+    border-radius: 15px;
+    
+}
+
+.dashboard-content-div {
+    margin-top: 20px;
+}

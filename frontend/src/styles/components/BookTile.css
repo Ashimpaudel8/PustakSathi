@@ -1,0 +1,101 @@
+.tile-div {
+    border: 1px solid black;
+    padding: 10px;
+    border-radius: 15px;
+    margin: 5px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    background: rgb(239, 248, 255);
+}
+
+.tile-buttons-container {
+    width: 90%;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin: 0px 0px 8px 0px;
+}
+
+.img-div {
+    position: relative;
+    width: 95%;
+    height: 320px;
+    overflow: hidden;
+    border: 2px solid rgb(91, 91, 91);
+    border-radius: 10px;
+}
+
+.open-btn {
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    z-index: 1;
+    padding: 10px;
+    font-size: 16px;
+    color: white;
+    background: linear-gradient(#0060fa, #0040ad);
+    border: none;
+    border-radius: 20px;
+    cursor: pointer;
+    opacity: 0;
+    visibility: hidden;
+    transition: opacity 0.2s ease;
+}
+
+.tile-div:hover .open-btn {
+    opacity: 1;
+    visibility: visible;
+}
+
+.img-div>img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+}
+
+.tile-div>h3 {
+    font-size: 18px;
+    font-family: sans-serif;
+    margin: 8px 0px 0px 0px;
+    text-align: center;
+}
+
+.metadata-div {
+    margin: auto 0;
+    align-self: stretch;
+}
+
+.metadata-div p {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 3px;
+    margin: 2px 0;
+    font-size: 16px;
+}
+
+.label {
+    font-weight: 600;
+    white-space: nowrap;
+}
+
+.value {
+    flex: 1;
+    min-width: 0;
+}
+
+.book-tile-readbooks-section {
+    align-self: self-start;
+    width: 100%;
+}
+
+.book-tile-readbooks-section>hr {
+    width: 100%;
+    margin: 8px 0px;
+    border-top: 2px solid #000000;
+}
+
+.readbooks-rating {
+    font-size: 16px;
+}

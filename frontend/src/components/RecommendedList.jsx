@@ -3,15 +3,22 @@ import BookTile from "./BookTile";
 import RatingModal from "./RatingModal";
 import api from "../api";
 import { useAuth } from "../context/AuthContext";
+import { usePageState } from "../context/PageStateContext";
+import "../styles/components/RecommendedList.css"
 
 function RecommendedList({
   recommendations,
   setRecommendations,
   setwishlist,
-  setreadbooks,
+  setreadbooks
 }) {
   const [ratingModalBook, setRatingModalBook] = useState(null);
   const { fetchUser } = useAuth();
+  const { usePersistedState } = usePageState();
+  const [, setCachedWishlist] = usePersistedState("wishlist.list", []);
+  const [hasFetchedWishlist] = usePersistedState("wishlist.fetched", false);
+  const [, setCachedReadBooks] = usePersistedState("readbooks.list", []);
+  const [hasFetchedReadBooks] = usePersistedState("readbooks.fetched", false);
 
   const handleMarkAsRead = (e, book) => {
     e.preventDefault();
@@ -23,14 +30,11 @@ function RecommendedList({
     api
       .post("/api/wishlist/", { isbn: book.isbn })
       .then((res) => {
+        const newWishlistEntry = { ...book, wishlist_id: res.data.id };
         if (setwishlist) {
-          setwishlist((prev) => [
-            ...prev,
-            {
-              ...book,
-              wishlist_id: res.data.id,
-            },
-          ]);
+          setwishlist((prev) => [...prev, newWishlistEntry]);
+        } else if (hasFetchedWishlist) {
+          setCachedWishlist((prev) => [...prev, newWishlistEntry]);
         }
         setRecommendations((prev) =>
           prev.map((b) =>
@@ -53,16 +57,16 @@ function RecommendedList({
       })
       .then((res) => {
         console.log(res.data);
+        const newReadBookEntry = {
+          ...ratingModalBook,
+          readbook_id: res.data.id,
+          rating: res.data.rating,
+          review: res.data.review,
+        };
         if (setreadbooks) {
-          setreadbooks((prev) => [
-            ...prev,
-            {
-              ...ratingModalBook,
-              readbook_id: res.data.id,
-              rating: res.data.rating,
-              review: res.data.review,
-            },
-          ]);
+          setreadbooks((prev) => [...prev, newReadBookEntry]);
+        } else if (hasFetchedReadBooks) {
+          setCachedReadBooks((prev) => [...prev, newReadBookEntry]);
         }
         setRecommendations((prev) =>
           prev.map((book) =>
@@ -78,13 +82,7 @@ function RecommendedList({
 
   return (
     <>
-      <div
-        style={{
-          display: "grid",
-          gridTemplateColumns: "repeat(5, 1fr)",
-          gap: "20px",
-        }}
-      >
+      <div className="book-grid">
         {recommendations.map((book) => (
           <BookTile
             key={book.isbn}
@@ -92,18 +90,21 @@ function RecommendedList({
             action1={
               book.is_read ? (
                 <button
+                  className="markedasread-btn"
                   title="Mark as Read"
-                  style={{ cursor: "pointer" }}
                   disabled={true}
                 >
+                  <i class="fa-solid fa-book-bookmark"></i>
+                  <i class="fa-solid fa-check"></i>
                   Marked as Read
                 </button>
               ) : (
                 <button
+                  className="markasread-btn"
                   title="Mark as Read"
-                  style={{ cursor: "pointer" }}
                   onClick={(e) => handleMarkAsRead(e, book)}
                 >
+                  <i className="fa-solid fa-book-bookmark"></i>
                   Mark as Read
                 </button>
               )
@@ -111,18 +112,18 @@ function RecommendedList({
             action2={
               book.is_wishlisted ? (
                 <button
+                  className="wishlisted-btn"
                   title="Wishlist"
-                  style={{ cursor: "pointer", fontSize: "18px", color: "red" }}
                 >
-                  <i class="fa-solid fa-heart"></i>
+                  <i className="fa-solid fa-heart"></i>
                 </button>
               ) : (
                 <button
+                  className="wishlist-btn"
                   title="Wishlist"
-                  style={{ color: "red", fontSize: "18px", cursor: "pointer" }}
                   onClick={(e) => handleWishlist(e, book)}
                 >
-                  <i class="fa-regular fa-heart"></i>
+                  <i className="fa-regular fa-heart"></i>
                 </button>
               )
             }

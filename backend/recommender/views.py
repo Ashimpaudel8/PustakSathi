@@ -1,10 +1,10 @@
-import json, time, requests, re, os, string, pickle, json
-from rest_framework.decorators import api_view, permission_classes
+import json, time, requests, re, os, string, json, random
 from django.contrib.auth.models import User
-from rest_framework import generics
 from .serializers import UserSerializer, BookSerializer, ReadBooksSerializer, WishlistSerializer
 from .models import Book, ReadBooks, Wishlist
 from django.http import JsonResponse
+from rest_framework import generics
+from rest_framework.decorators import api_view, permission_classes
 from rest_framework.permissions import AllowAny, IsAuthenticated, IsAdminUser
 from rest_framework.decorators import api_view, permission_classes
 from rest_framework.response import Response
@@ -190,16 +190,14 @@ def get_recommendation_view(request):
     isbn = request.query_params.get("i", "").strip()
 
     if isbn:
+
         selected_idx = [
             data_store.indices_isbn.get(isbn.strip(), None)
         ]
 
     elif title:
-        titles = [title]
-
         selected_idx = [
             data_store.indices_title.get(normalize_title(title), None)
-            for title in titles
         ]
 
     selected_idx = [idx for idx in selected_idx if idx is not None]
@@ -208,6 +206,14 @@ def get_recommendation_view(request):
         return Response(
             {"Recommendations": []}
         )
+    
+    single_book = data_store.combined_df.iloc[selected_idx[0]]
+    print(single_book["title"])
+    print(single_book["author"])
+    print(single_book["description"])
+    print(single_book["isbn"])
+    single_book_result = get_book_detail(single_book["title"], single_book["author"], single_book["description"], single_book["isbn"])
+    # single_book_result = {"None": "gg"}
     
     user_vector = np.asarray(data_store.vectorized_matrix[selected_idx].mean(axis=0))
     sim_score = cosine_similarity(user_vector, data_store.vectorized_matrix)[0]
@@ -235,7 +241,7 @@ def get_recommendation_view(request):
             "isbn": book["isbn"]
         })
 
-        if len(books) == 4:
+        if len(books) == 8:
             break
 
     with ThreadPoolExecutor(max_workers=10) as executor:
@@ -264,7 +270,7 @@ def get_recommendation_view(request):
         book["is_wishlisted"] = book["isbn"] in wishlist_isbns
         book["is_read"] = book["isbn"] in read_isbns
 
-    return Response({"Recommendations": response_list})
+    return Response({"single_book_detail": single_book_result, "Recommendations": response_list})
 
 
 class ReadBooksListCreate(generics.ListCreateAPIView):
@@ -373,7 +379,7 @@ def get_readbooks_recommendation_view(request):
             "isbn": book["isbn"]
         })
 
-        if len(books) == 4:
+        if len(books) == 8:
             break
 
     with ThreadPoolExecutor(max_workers=10) as executor:
@@ -501,7 +507,7 @@ def get_wishlist_recommendation_view(request):
             "isbn": book["isbn"]
         })
 
-        if len(books) == 4:
+        if len(books) == 8:
             break
 
     with ThreadPoolExecutor(max_workers=10) as executor:
@@ -550,51 +556,66 @@ def me(request):
 
 
 @api_view(['GET'])
-@permission_classes([IsAuthenticated])
-def get_single_book_detail():
-    pass
+@permission_classes([AllowAny])
+def get_discover_books_view(request):
+    cache_key = f"discover_books:{request.user.id}"
+    cached = cache.get(cache_key)
 
+    if cached is not None:
+        response_list = cached
+    else:
+        seen = set()
+        books = []
 
+        random_idx = random.sample(range(len(data_store.combined_df)), 50)
 
+        for idx in random_idx:
+            book = data_store.combined_df.iloc[idx]
+            key = clean_title(book["title"])
 
+            if key in seen:
+                continue
 
+            seen.add(key)
+            books.append({
+                "title": book["title"],
+                "author": book["author"],
+                "description": book["description"],
+                "isbn": book["isbn"],
+            })
 
+            if len(books) == 8:
+                break
 
+        with ThreadPoolExecutor(max_workers=10) as executor:
+            response_list = list(
+                executor.map(
+                    lambda book: get_book_detail(
+                        book["title"],
+                        book["author"],
+                        book["description"],
+                        book["isbn"]
+                    ),
+                    books,
+                )
+            )
 
+        cache.set(cache_key, response_list, timeout=3600)
 
+    wishlist_isbns = set(
+        Wishlist.objects.filter(user=request.user)
+        .values_list("book__isbn", flat=True)
+    )
+    read_isbns = set(
+        ReadBooks.objects.filter(user=request.user)
+        .values_list("book__isbn", flat=True)
+    )
 
+    for book in response_list:
+        book["is_wishlisted"] = book["isbn"] in wishlist_isbns
+        book["is_read"] = book["isbn"] in read_isbns
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+    return Response({"Discover_Something_New": response_list})
 
 
 

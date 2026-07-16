@@ -25,4 +25,5 @@ urlpatterns = [
     path("wishlist/recommend/", views.get_wishlist_recommendation_view, 
          name="wishlist-recommend"),
     path("user/me/", views.me, name="me"),
+    path("discover/", views.get_discover_books_view, name="discover"),
 ]

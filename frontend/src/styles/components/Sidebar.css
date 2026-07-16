@@ -52,6 +52,7 @@
     border: none;
     background: transparent;
     font-size: 22px;
+    cursor: pointer;
 }
 
 .hamburger:hover {
