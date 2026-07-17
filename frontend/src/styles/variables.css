@@ -1,0 +1,75 @@
+:root {
+    --navbar-height: 80px;
+}
+
+.dashboard-layout {
+    --content-bg: #f6f6f6;
+    --card-bg: rgb(239, 248, 255);
+    --card-border: #000000;
+    --card-img-border: rgb(91, 91, 91);
+    --text-primary: #222222;
+    --text-secondary: #475363;
+    --text-muted: #4b5563;
+    --divider-color: #595959;
+    --input-bg: #ffffff;
+    --input-border: #c6c6c6;
+    --select-bg: #f1f1f1;
+    --select-border: #d3d3d3;
+    --suggestion-bg: rgb(214, 214, 214);
+    --suggestion-hover-bg: rgb(160, 160, 160);
+    --search-container-bg: rgb(237, 237, 237);
+    --collapsible-bg: #ffffff;
+    --collapsible-border: #dddddd;
+    --modal-bg: #ffffff;
+    --modal-title: #1a1a1a;
+    --spinner-track: #d9d9d9;
+    --loader-heading: #111827;
+    --sidebar-bg: #155E5E;
+    --sidebar-hover: #1F7575;
+    --sidebar-active: #0B7A75;
+    --sidebar-hamburger-hover: #2a8e89;
+    --accent-blue: #1245fc;
+    --accent-blue-light: #4d7bff;
+    --wishlist-red: #FF3040;
+    --accent-gradient-start: #005CF1;
+    --accent-gradient-end: #0044B6;
+    --danger-gradient-start: #ff000d;
+    --danger-gradient-end: #ff780a;
+    --recommend-bg: #99de33;
+}
+
+.dashboard-layout.dark-theme {
+    --content-bg: #121212;
+    --card-bg: #1e1e1e;
+    --card-border: #3a3a3a;
+    --card-img-border: #4a4a4a;
+    --text-primary: #f1f1f1;
+    --text-secondary: #b8c2cc;
+    --text-muted: #9ca3af;
+    --divider-color: #3a3a3a;
+    --input-bg: #1e1e1e;
+    --input-border: #3a3a3a;
+    --select-bg: #2a2a2a;
+    --select-border: #3a3a3a;
+    --suggestion-bg: #262626;
+    --suggestion-hover-bg: #333333;
+    --search-container-bg: #1a1a1a;
+    --collapsible-bg: #1e1e1e;
+    --collapsible-border: #3a3a3a;
+    --modal-bg: #1e1e1e;
+    --modal-title: #f1f1f1;
+    --spinner-track: #333333;
+    --loader-heading: #f1f1f1;
+    --sidebar-bg: #1a6f6f;
+    --sidebar-hover: #268a8a;
+    --sidebar-active: #0f9a92;
+    --sidebar-hamburger-hover: #2f9a94;
+    --accent-blue: #3f6bff;
+    --accent-blue-light: #6f93ff;
+    --wishlist-red: #ff5b72;
+    --accent-gradient-start: #2f7bff;
+    --accent-gradient-end: #1a56c9;
+    --danger-gradient-start: #ff3b4d;
+    --danger-gradient-end: #ff9a3d;
+    --recommend-bg: #7cc22a;
+}

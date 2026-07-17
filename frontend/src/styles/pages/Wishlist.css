@@ -18,7 +18,7 @@
     display: flex;
     gap: 8px;
     cursor: pointer;
-    background: linear-gradient(45deg, #ff000d, #ff780a);
+    background: linear-gradient(45deg, var(--danger-gradient-start), var(--danger-gradient-end));
     padding: 7px;
     color: white;
     font-size: 16px;
@@ -57,11 +57,11 @@
 }
 
 .wishlist-collapsible {
-    border: 1px solid #ddd;
+    border: 1px solid var(--collapsible-border);
     border-radius: 12px;
     padding: 15px 20px;
     margin-bottom: 20px;
-    background: #fff;
+    background: var(--collapsible-bg);
     transition: padding 0.25s ease;
 }
 
@@ -80,7 +80,7 @@
     cursor: pointer;
     font-size: 20px;
     font-weight: 700;
-    color: #1245fc;
+    color: var(--accent-blue);
     padding: 0;
     margin-bottom: 12px;
 }

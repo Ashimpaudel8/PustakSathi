@@ -15,7 +15,6 @@ function SideBar() {
       </button>
       <div className="side-link-container">
         <NavLink to="/dashboard"
-          state={{ focusSearch: true }}
           className={({ isActive }) =>
             isActive ? "side-link active" : "side-link"
           }>
@@ -26,7 +25,7 @@ function SideBar() {
           className={({ isActive }) =>
             isActive ? "side-link active" : "side-link"
           }>
-          <i className="fa-solid fa-bookmark"></i>
+          <i className="fa-solid fa-heart"></i>
           {!collapsed && "Wishlists"}
         </NavLink>
         <NavLink to="/readbooks"

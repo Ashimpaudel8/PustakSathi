@@ -10,10 +10,16 @@ function SingleBookDetail({ book }) {
             book.thumbnail_url
               ? book.thumbnail_url
               : book.thumbnail_id
-                ? `https://covers.openlibrary.org/b/id/${book.thumbnail_id}-L.jpg`
+                ? `https://covers.openlibrary.org/b/id/${book.thumbnail_id}-M.jpg`
                 : defaultBookCover
           }
           alt="Book Thumbnail"
+          loading="lazy"
+          decoding="async"
+          onError={(e) => {
+            e.target.onerror = null;
+            e.target.src = defaultBookCover;
+          }}
         />
       </div>
 

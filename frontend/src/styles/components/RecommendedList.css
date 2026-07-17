@@ -15,6 +15,7 @@
     background: none;
     border: none;
     border-radius: 25%;
+    color: var(--text-primary);
     font-size: 24px;
     transition: transform 0.18s ease, box-shadow 0.18s ease;
 }
@@ -24,7 +25,7 @@
     background: none;
     border: none;
     border-radius: 25%;
-    color: #FF3040;
+    color: var(--wishlist-red);
     font-size: 24px;
     transition: transform 0.18s ease, box-shadow 0.18s ease;
 }
@@ -33,7 +34,7 @@
     display: flex;
     gap: 8px;
     cursor: pointer;
-    background: linear-gradient(45deg, #005CF1, #0044B6);
+    background: linear-gradient(45deg, var(--accent-gradient-start), var(--accent-gradient-end));
     padding: 7px;
     color: white;
     font-size: 16px;
@@ -46,7 +47,7 @@
     display: flex;
     gap: 8px;
     cursor: pointer;
-    background: linear-gradient(45deg, #005CF1, #0044B6);
+    background: linear-gradient(45deg, var(--accent-gradient-start), var(--accent-gradient-end));
     padding: 7px;
     color: white;
     font-size: 16px;

@@ -17,13 +17,13 @@
 
 .get-recommend-btn {
     font-size: 16px;
-    border: 3px solid #1245fc;
+    border: 3px solid var(--accent-blue);
     border-radius: 15px;
     cursor: pointer;
     padding: 5px;
-    color: #1245fc;
+    color: var(--accent-blue);
     font-size: 18px;
     font-weight: 800;
-    background: #99de33;
+    background: var(--recommend-bg);
     margin: 15px;
 }

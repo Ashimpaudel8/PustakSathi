@@ -1,0 +1,138 @@
+/* ===== Navbar ===== */
+@media (max-width: 1024px) {
+    .navbar {
+        height: 64px;
+        padding: 0 10px;
+    }
+
+    .logo {
+        height: 48px;
+    }
+
+    .home-link {
+        left: 10px;
+    }
+
+    .nav-container {
+        gap: 0.5rem;
+        font-size: 16px;
+    }
+
+    .nav-container > span {
+        display: none;
+    }
+}
+
+/* ===== Search bar ===== */
+@media (max-width: 1024px) {
+    .search-input-wrap {
+        width: 85%;
+    }
+
+    .search-suggestions {
+        left: 5%;
+        width: 85%;
+    }
+}
+
+/* Tablet: full bar stays, just narrower + centered */
+@media (max-width: 1024px) {
+    .search-div {
+        width: 80%;
+        margin: 0 auto;
+    }
+
+    .mobile-search-toggle,
+    .mobile-search-close {
+        display: none;
+    }
+}
+
+/* Mobile: collapse to a single tappable icon, expand on tap */
+@media (max-width: 600px) {
+    .search-div {
+        width: 80%;
+        margin: 0 auto;
+        flex-wrap: nowrap;
+    }
+
+    .search-div .search-input-wrap,
+    .search-div .search-button,
+    .search-div .search-type-select {
+        display: none;
+    }
+
+    .mobile-search-toggle {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        width: 100%;
+        background: none;
+        border: none;
+        font-size: 20px;
+        color: var(--text-primary, #222);
+        cursor: pointer;
+    }
+
+    .search-div.mobile-expanded .mobile-search-toggle {
+        display: none;
+    }
+
+    .search-div.mobile-expanded .search-input-wrap,
+    .search-div.mobile-expanded .search-button,
+    .search-div.mobile-expanded .search-type-select {
+        display: flex;
+    }
+
+    .search-div.mobile-expanded .search-input-wrap {
+        flex: 1 1 auto;
+        min-width: 0;
+    }
+
+    .search-div.mobile-expanded .search-type-select {
+        flex: 0 0 auto;
+        margin-left: 4px;
+        font-size: 13px;
+        padding: 0 4px;
+    }
+
+    .mobile-search-close {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin-left: 4px;
+        background: none;
+        border: none;
+        font-size: 18px;
+        color: var(--text-primary, #222);
+        cursor: pointer;
+    }
+
+    .search-suggestions {
+        left: 0;
+        width: 100%;
+    }
+}
+
+/* ===== Book grid ===== */
+@media (max-width: 1024px) {
+    .book-grid > * {
+        flex: 1 1 calc(33.333% - 20px);
+        max-width: calc(33.333% - 20px);
+    }
+}
+
+@media (max-width: 600px) {
+    .book-grid > * {
+        flex: 1 1 calc(50% - 20px);
+        max-width: calc(50% - 20px);
+    }
+}
+
+/* ===== Wishlist / ReadBooks ===== */
+@media (max-width: 600px) {
+    .wishlist-collapsible,
+    .readbooks-collapsible {
+        width: 100%;
+    }
+}

@@ -5,7 +5,15 @@
 .page-content {
     flex: 1;
     padding: 0px 2rem;
-    border: 3px solid slategray;
-    margin: 5px;
+    border-top: none;
+    margin-top: 0;
+    background: var(--content-bg, #f6f6f6);
+    color: var(--text-primary, #222);
+    transition: background 0.2s ease, color 0.2s ease;
 }
 
+@media (max-width: 1024px) {
+    .page-content {
+        padding-bottom: 75px;
+    }
+}

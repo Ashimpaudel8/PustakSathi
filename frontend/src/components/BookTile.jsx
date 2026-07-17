@@ -33,6 +33,12 @@ function BookTile({ book, action1, action2 }) {
                   : defaultBookCover
             }
             alt="Book Thumbnail"
+            loading="lazy"
+            decoding="async"
+            onError={(e) => {
+              e.target.onerror = null; // prevent infinite loop
+              e.target.src = defaultBookCover;
+            }}
           />
         </div>
 

@@ -1,10 +1,11 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useRef } from "react";
 import api from "../api";
 import BookTile from "../components/BookTile";
 import RecommendedList from "../components/RecommendedList";
 import { Link } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 import { usePageState } from "../context/PageStateContext";
+import RecommendationLoader from "../components/RecommendationLoader";
 import "../styles/pages/Wishlist.css"
 
 function Wishlist() {
@@ -15,6 +16,16 @@ function Wishlist() {
   const [recommendations, setRecommendations] = usePersistedState("wishlist.recommendations", []);
   const [isRecommending, setIsRecommending] = useState(null);
   const { fetchUser } = useAuth();
+  const loadingRef = useRef(null);
+
+  useEffect(() => {
+    if (isRecommending && loadingRef.current) {
+      loadingRef.current.scrollIntoView({
+        behavior: "smooth",
+        block: "center",
+      });
+    }
+  }, [isRecommending]);
 
   const handleDelete = (e, book) => {
     e.preventDefault();
@@ -108,11 +119,15 @@ function Wishlist() {
       <button
         className="get-recommend-btn"
         onClick={handleGetRecommendations}>Get Recommendations</button>
-      <RecommendedList
-        recommendations={recommendations}
-        setwishlist={setWishlist}
-        setRecommendations={setRecommendations}
-      />
+      {isRecommending ?
+        <div ref={loadingRef}>
+          <RecommendationLoader />
+        </div>
+        : <RecommendedList
+          recommendations={recommendations}
+          setwishlist={setWishlist}
+          setRecommendations={setRecommendations}
+        />}
     </div>
   );
 }

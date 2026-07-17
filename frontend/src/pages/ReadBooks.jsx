@@ -1,10 +1,11 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useRef } from "react";
 import api from "../api";
 import BookTile from "../components/BookTile";
 import RecommendedList from "../components/RecommendedList";
 import { Link } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 import { usePageState } from "../context/PageStateContext";
+import RecommendationLoader from "../components/RecommendationLoader";
 import "../styles/pages/ReadBooks.css"
 
 function ReadBooks() {
@@ -15,6 +16,16 @@ function ReadBooks() {
   const [recommendations, setRecommendations] = usePersistedState("readbooks.recommendations", []);
   const [isRecommending, setIsRecommending] = useState(null);
   const { fetchUser } = useAuth();
+  const loadingRef = useRef(null);
+
+  useEffect(() => {
+    if (isRecommending && loadingRef.current) {
+      loadingRef.current.scrollIntoView({
+        behavior: "smooth",
+        block: "center",
+      });
+    }
+  }, [isRecommending]);
 
   const handleDelete = (e, book) => {
     e.preventDefault();
@@ -101,13 +112,18 @@ function ReadBooks() {
         )}
       </div>
       <h1>Recommended Books :</h1>
-      <button className="get-recommend-btn" onClick={handleGetRecommendations}>Get Recommendations</button>
-      <RecommendedList
-        recommendations={recommendations}
-        setreadbooks={setReadBooks}
-        recommendations={recommendations}
-        setRecommendations={setRecommendations}
-      />
+      <button
+        className="get-recommend-btn"
+        onClick={handleGetRecommendations}>Get Recommendations</button>
+      {isRecommending ?
+        <div ref={loadingRef}>
+          <RecommendationLoader />
+        </div>
+        : <RecommendedList
+          recommendations={recommendations}
+          setreadbooks={setReadBooks}
+          setRecommendations={setRecommendations}
+        />}
     </div>
   );
 }

@@ -1,7 +1,7 @@
 .sidebar {
     width: 200px;
     padding: 10px 2px 2px 10px;
-    background: #155E5E;
+    background: var(--sidebar-bg);
     height: calc(100vh - 80px);
     transition: width 0.25s ease;
     position: sticky;
@@ -34,12 +34,12 @@
 }
 
 .side-link:hover {
-    background: #1F7575;
+    background: var(--sidebar-hover);
 }
 
 .side-link.active {
     font-weight: bold;
-    background: #0B7A75;
+    background: var(--sidebar-active);
 }
 
 .hamburger {
@@ -56,10 +56,16 @@
 }
 
 .hamburger:hover {
-    background: #2a8e89;
+    background: var(--sidebar-hamburger-hover);
 }
 
 .sidebar.collapsed .side-link {
     justify-content: center;
     margin: 5px 0px 5px 0px;
+}
+
+@media (max-width: 1024px) {
+    .sidebar {
+        display: none;
+    }
 }

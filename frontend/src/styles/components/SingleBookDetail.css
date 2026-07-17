@@ -1,6 +1,6 @@
 .singlebook-div {
     display: flex;
-    border: 2px solid #155E5E;
+    border: 2px solid var(--sidebar-bg);
     border-radius: 10px;
     padding: 10px;
 }
@@ -8,12 +8,15 @@
 .singleimg-div {
     height: 420px;
     margin-right: 20px;
+    align-self: center;
+    
 }
 
 .singleimg-div>img {
     height: 100%;
     object-fit: cover;
     display: block;
+    border-radius: 10px;
 }
 
 .singlebook-metadata {
@@ -35,7 +38,7 @@
 }
 
 .singlebook-metadata .detail {
-    color: #475363;
+    color: var(--text-secondary);
     margin: 3px 0px;
     font-weight: 400;
 }
@@ -43,7 +46,7 @@
 .singlebook-metadata hr {
     border: none;
     height: 2px;
-    background-color: #595959;
+    background-color: var(--divider-color);
     margin: 10px 0;
 }
 
@@ -55,5 +58,5 @@
 .singlebook-metadata .description-text {
     margin: 3px 0px;
     font-size: 16px;
-    color: #334155;
+    color: var(--text-secondary);
 }

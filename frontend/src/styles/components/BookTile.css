@@ -1,12 +1,12 @@
 .tile-div {
-    border: 1px solid black;
+    border: 1px solid var(--card-border);
     padding: 10px;
     border-radius: 15px;
     margin: 5px;
     display: flex;
     flex-direction: column;
     align-items: center;
-    background: rgb(239, 248, 255);
+    background: var(--card-bg);
 }
 
 .tile-buttons-container {
@@ -22,7 +22,7 @@
     width: 95%;
     height: 320px;
     overflow: hidden;
-    border: 2px solid rgb(91, 91, 91);
+    border: 2px solid var(--card-img-border);
     border-radius: 10px;
 }
 
@@ -56,6 +56,7 @@
 }
 
 .tile-div>h3 {
+    color: var(--text-primary);
     font-size: 18px;
     font-family: sans-serif;
     margin: 8px 0px 0px 0px;
@@ -93,7 +94,7 @@
 .book-tile-readbooks-section>hr {
     width: 100%;
     margin: 8px 0px;
-    border-top: 2px solid #000000;
+    border-top: 2px solid var(--divider-color);
 }
 
 .readbooks-rating {
