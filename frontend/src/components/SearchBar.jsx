@@ -1,6 +1,6 @@
 import { useEffect, useState, useRef } from "react";
 import api from "../api";
-import "../styles/components/SearchBar.css"
+import "../styles/components/SearchBar.css";
 import { usePageState } from "../context/PageStateContext";
 
 function SearchBar({ setRecommendations, setSingleBook, setIsDiscover, setIsRecommending }) {
@@ -8,6 +8,26 @@ function SearchBar({ setRecommendations, setSingleBook, setIsDiscover, setIsReco
   const searchContainerRef = useRef(null);
   const [mobileSearchOpen, setMobileSearchOpen] = useState(false);
   const [isMobile, setIsMobile] = useState(window.innerWidth <= 600);
+
+  useEffect(() => {
+    const handleTouchMove = () => {
+      if (
+        isMobile &&
+        inputRef.current === document.activeElement
+      ) {
+        inputRef.current.blur();
+        setBooks([]);
+      }
+    };
+
+    document.addEventListener("touchmove", handleTouchMove, {
+      passive: true,
+    });
+
+    return () => {
+      document.removeEventListener("touchmove", handleTouchMove);
+    };
+  }, [isMobile]);
 
   useEffect(() => {
     const handleClickOutside = (e) => {
@@ -34,7 +54,6 @@ function SearchBar({ setRecommendations, setSingleBook, setIsDiscover, setIsReco
   const [books, setBooks] = useState([]);
   const [searchBy, setSearchBy] = usePersistedState("dashboard.searchBy", "q");
 
-  // Show suggestions only for title search
   const showSuggestions = searchBy === "q";
 
   const handleChange = (e) => {
@@ -44,6 +63,13 @@ function SearchBar({ setRecommendations, setSingleBook, setIsDiscover, setIsReco
   const handleMobileSearchOpen = () => {
     setMobileSearchOpen(true);
     setTimeout(() => inputRef.current?.focus(), 50);
+  };
+
+  // Clears the input field and drops suggestions instantly
+  const handleClearSearch = () => {
+    setSearch("");
+    setBooks([]);
+    inputRef.current?.focus();
   };
 
   const skipNextFetch = useRef(false);
@@ -59,7 +85,6 @@ function SearchBar({ setRecommendations, setSingleBook, setIsDiscover, setIsReco
       .get("/api/books/search/", { params: { [searchBy]: search } })
       .then((res) => setBooks(res.data))
       .catch((err) => console.error(err));
-
   };
 
   useEffect(() => {
@@ -88,7 +113,7 @@ function SearchBar({ setRecommendations, setSingleBook, setIsDiscover, setIsReco
     if (!search.trim()) return;
 
     setBooks([]);
-    skipNextFetch.current = true; // in case search state changes downstream
+    skipNextFetch.current = true;
 
     try {
       setIsRecommending(true);
@@ -98,17 +123,15 @@ function SearchBar({ setRecommendations, setSingleBook, setIsDiscover, setIsReco
       });
       setRecommendations(res.data.Recommendations);
       setSingleBook(res.data.single_book_detail);
-    }
-    catch (err) {
+    } catch (err) {
       console.error(err);
-    }
-    finally {
+    } finally {
       setIsRecommending(false);
     }
   };
 
   const handleBookClick = async (title) => {
-    skipNextFetch.current = true; // must be set BEFORE setSearch triggers the effect
+    skipNextFetch.current = true;
     setSearch(title);
     setBooks([]);
 
@@ -118,17 +141,26 @@ function SearchBar({ setRecommendations, setSingleBook, setIsDiscover, setIsReco
       const res = await api.get("/api/books/recommend/", { params: { q: title } });
       setRecommendations(res.data.Recommendations);
       setSingleBook(res.data.single_book_detail);
-    }
-    catch (err) {
+    } catch (err) {
       console.error(err);
-    }
-    finally {
+    } finally {
       setIsRecommending(false);
     }
   };
 
   return (
     <div className={`search-div ${mobileSearchOpen ? "mobile-expanded" : ""}`}>
+      {isMobile && mobileSearchOpen && (
+        <button
+          type="button"
+          className="mobile-search-close"
+          onClick={() => setMobileSearchOpen(false)}
+          aria-label="Close search"
+        >
+          <i className="fa-solid fa-arrow-left"></i>
+        </button>
+      )}
+
       {isMobile && (
         <button
           type="button"
@@ -141,7 +173,8 @@ function SearchBar({ setRecommendations, setSingleBook, setIsDiscover, setIsReco
       )}
 
       <div className="search-input-wrap" ref={searchContainerRef}>
-        <input className="search-box"
+        <input 
+          className="search-box"
           ref={inputRef}
           type="text"
           value={search}
@@ -157,7 +190,8 @@ function SearchBar({ setRecommendations, setSingleBook, setIsDiscover, setIsReco
         {showSuggestions && books.length > 0 && (
           <div className="search-suggestions">
             {books.map((book) => (
-              <div className="search-suggest"
+              <div 
+                className="search-suggest"
                 key={book.id}
                 onClick={() => handleBookClick(book.title)}
               >
@@ -165,6 +199,18 @@ function SearchBar({ setRecommendations, setSingleBook, setIsDiscover, setIsReco
               </div>
             ))}
           </div>
+        )}
+        
+        {/* FIXED: Button now toggles purely on string text existence and triggers field clearance */}
+        {search.trim().length > 0 && (
+          <button 
+            type="button" 
+            className="close-btn" 
+            onClick={handleClearSearch}
+            aria-label="Clear search text"
+          >
+            <i className="fa-solid fa-xmark"></i>
+          </button>
         )}
       </div>
 
@@ -187,17 +233,6 @@ function SearchBar({ setRecommendations, setSingleBook, setIsDiscover, setIsReco
         <option value="q">{isMobile ? "Title" : "Search by Title"}</option>
         <option value="i">{isMobile ? "ISBN" : "Search by ISBN"}</option>
       </select>
-
-      {isMobile && mobileSearchOpen && (
-        <button
-          type="button"
-          className="mobile-search-close"
-          onClick={() => setMobileSearchOpen(false)}
-          aria-label="Close search"
-        >
-          <i className="fa-solid fa-xmark"></i>
-        </button>
-      )}
     </div>
   );
 }

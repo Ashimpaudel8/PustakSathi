@@ -18,8 +18,12 @@
         font-size: 16px;
     }
 
-    .nav-container > span {
+    .nav-container>span {
         display: none;
+    }
+
+    .loggedout-div {
+        width: 180px;
     }
 }
 
@@ -48,12 +52,22 @@
     }
 }
 
-/* Mobile: collapse to a single tappable icon, expand on tap */
+/* ===== Mobile Search ===== */
 @media (max-width: 600px) {
+    .search-container {
+        top: 64px;
+        background: transparent;
+        padding: 0;
+    }
+
     .search-div {
-        width: 80%;
-        margin: 0 auto;
-        flex-wrap: nowrap;
+        width: fit-content;
+        margin: 10px 0 10px auto;
+        padding: 8px;
+        background: var(--search-container-bg);
+        border-radius: 16px;
+        display: flex;
+        align-items: center;
     }
 
     .search-div .search-input-wrap,
@@ -66,73 +80,271 @@
         display: flex;
         align-items: center;
         justify-content: center;
-        width: 100%;
+        width: 32px;
+        height: 32px;
+        padding: 0;
         background: none;
         border: none;
-        font-size: 20px;
-        color: var(--text-primary, #222);
+        font-size: 18px;
+        color: var(--text-primary);
         cursor: pointer;
+    }
+
+    /* Expanded */
+    .search-div.mobile-expanded {
+        width: 95%;
+        margin: 10px auto;
+        /* center when expanded */
+        padding: 8px 10px;
     }
 
     .search-div.mobile-expanded .mobile-search-toggle {
         display: none;
     }
 
-    .search-div.mobile-expanded .search-input-wrap,
-    .search-div.mobile-expanded .search-button,
+    .search-div.mobile-expanded .search-input-wrap {
+        display: flex;
+    }
+
     .search-div.mobile-expanded .search-type-select {
         display: flex;
     }
 
+    .search-div.mobile-expanded .search-button {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        flex: 0 0 38px;
+        width: 38px;
+        padding: 0;
+        font-size: 14px;
+
+        border-radius: 0 15px 15px 0;
+    }
+
     .search-div.mobile-expanded .search-input-wrap {
-        flex: 1 1 auto;
+        flex: 1;
         min-width: 0;
     }
 
+    .search-div.mobile-expanded .search-box {
+        font-size: 14px;
+        padding: 12px 22px 12px 10px;
+        border-radius: 15px 0 0 15px;
+    }
+
+    .search-div.mobile-expanded .search-button {
+        flex: 0 0 38px;
+        width: 38px;
+        font-size: 15px;
+        border-radius: 0 15px 15px 0;
+    }
+
     .search-div.mobile-expanded .search-type-select {
-        flex: 0 0 auto;
+        flex: 0 0 68px;
+        width: 68px;
         margin-left: 4px;
-        font-size: 13px;
         padding: 0 4px;
+        font-size: 13px;
     }
 
     .mobile-search-close {
         display: flex;
         align-items: center;
         justify-content: center;
-        margin-left: 4px;
+        margin-right: 7px;
         background: none;
         border: none;
         font-size: 18px;
-        color: var(--text-primary, #222);
-        cursor: pointer;
+        color: var(--text-primary);
     }
 
     .search-suggestions {
-        left: 0;
-        width: 100%;
+        left: 15px;
+        width: 90%;
+        font-size: 14px;
+        padding: 5px;
+    }
+
+    .search-suggest {
+        padding: 3px;
     }
 }
 
-/* ===== Book grid ===== */
+/* ===== Book/Wishlist/Readbooks grid ===== */
 @media (max-width: 1024px) {
-    .book-grid > * {
-        flex: 1 1 calc(33.333% - 20px);
-        max-width: calc(33.333% - 20px);
+
+    .book-grid,
+    .wishlist-book-grid,
+    .readbooks-book-grid {
+        gap: 5px;
+    }
+
+    .book-grid>*,
+    .wishlist-book-grid>*,
+    .readbooks-book-grid>* {
+        flex: 1 1 calc(30% - 5px);
+        max-width: calc(30% - 5px);
+        min-width: 0px;
     }
 }
 
 @media (max-width: 600px) {
-    .book-grid > * {
-        flex: 1 1 calc(50% - 20px);
-        max-width: calc(50% - 20px);
+
+    .book-grid,
+    .wishlist-book-grid,
+    .readbooks-book-grid {
+        gap: 2px;
+    }
+
+    .book-grid>*,
+    .wishlist-book-grid>*,
+    .readbooks-book-grid>* {
+        flex: 1 1 calc(45% - 2px);
+        max-width: calc(50% - 2px);
+        min-width: 0;
     }
 }
 
 /* ===== Wishlist / ReadBooks ===== */
 @media (max-width: 600px) {
+
     .wishlist-collapsible,
     .readbooks-collapsible {
+        padding: 15px 7px;
+    }
+}
+
+/* ===== Authentication ===== */
+@media (max-width: 1024px) {
+    .div-container {
+        width: 90%;
+    }
+}
+
+/* ===== Book Tile ===== */
+@media (max-width: 1024px) {
+    .tile-div {
+        padding: 7px;
+    }
+
+    .tile-buttons-container {
         width: 100%;
+    }
+
+    .img-div {
+        height: 240px;
+        border: 1px solid var(--card-img-border);
+        border-radius: 8px;
+    }
+
+    .open-btn {
+        padding: 7px;
+        font-size: 14px;
+        opacity: 1;
+        visibility: visible;
+    }
+
+    .tile-div>h3 {
+        font-size: 16px;
+        margin: 6px 0px 0px 0px;
+    }
+
+    .metadata-div p {
+        font-size: 14px;
+    }
+
+    .book-tile-readbooks-section>hr {
+        margin: 4px 0px;
+        border-top: 1.2px solid var(--divider-color);
+    }
+
+    .readbooks-rating {
+        font-size: 14px;
+    }
+}
+
+/* ===== Single Book ===== */
+@media (max-width: 1024px) {
+    .singlebook-div {
+        flex-direction: column;
+    }
+
+    .singleimg-div {
+        margin-right: 0px;
+    }
+
+    .singlebook-metadata {
+        padding-top: 10px;
+        font-size: 13px;
+    }
+
+    .singlebook-metadata .title {
+        font-size: 20px;
+    }
+
+    .singlebook-metadata .isbn {
+        margin: 3px 0px;
+    }
+
+    .singlebook-metadata .detail {
+        margin: 2px 0px;
+    }
+
+    .singlebook-metadata hr {
+        height: 1.3px;
+        margin: 5px 0;
+    }
+
+    .singlebook-metadata .description {
+        margin: 5px 0px;
+        font-size: 18px;
+    }
+
+    .singlebook-metadata .description-text {
+        margin: 2px 0px;
+        font-size: 15px;
+    }
+}
+
+/* buttons */
+
+@media (max-width: 600px) {
+    .tile-buttons-container {
+        flex-wrap: wrap;
+        gap: 6px;
+    }
+
+    .markasread-btn,
+    .markedasread-btn {
+        flex: 1 1 auto;
+        min-width: 0;
+        font-size: 12px;
+    }
+
+    .wishlist-btn,
+    .wishlisted-btn {
+        flex: 1 1 auto;
+        min-width: 0;
+        font-size: 16px;
+    }
+
+    .removewishlist-btn,
+    .removereadbooks-btn {
+        font-size: 12px;
+    }
+}
+
+@media (max-width: 1024px) {
+
+    .metadata-div .value,
+    .tile-div>h3 {
+        overflow-wrap: break-word;
+        word-break: break-word;
+    }
+
+    .close-btn {
+        right: 34%;
+        font-size: 18px;
     }
 }

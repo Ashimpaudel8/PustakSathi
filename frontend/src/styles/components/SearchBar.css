@@ -11,6 +11,7 @@
     display: flex;
     justify-content: center;
     align-items: center;
+    
 }
 
 .search-box {
@@ -23,6 +24,7 @@
     color: var(--text-primary);
     border-radius: 20px 0px 0px 20px;
     box-shadow: inset 0 1px 2px #eee;
+    position: relative;
 }
 
 .search-box:focus {
@@ -33,8 +35,8 @@
 
 .search-suggestions {
     position: absolute;
-    top: 45px;
-    left: 200px;
+    top: 80%;
+    left: 16%;
     font-size: 18px;
     background: var(--suggestion-bg);
     border: 1px solid var(--card-border);
@@ -93,4 +95,17 @@
 .search-type-select option {
     background: var(--input-bg);
     color: var(--text-primary);
+}
+
+.close-btn {
+    position: absolute;
+    right: 32%;
+    top: 50%;
+    transform: translateY(-50%);
+    background: transparent;
+    border: none;
+    cursor: pointer;
+    font-size: 22px;
+    padding: 5px;
+    z-index: 2;
 }
