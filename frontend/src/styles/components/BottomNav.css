@@ -31,7 +31,6 @@
         flex-direction: column;
         gap: 5px;
         font-size: 20px;
-        /* slightly smaller to make room for label */
     }
 
     .bottom-nav-label {
@@ -44,10 +43,9 @@
     }
 
     .bottom-nav-profile {
-        position: relative;
+        /* position: relative; */
         width: 25%;
-        height: 100%;
-        bottom: 10%;
+        /* height: 100%; */
     }
 
     .bottom-nav-profile .bottom-nav-link {
@@ -102,12 +100,10 @@
         position: fixed;
         inset: 0;
         z-index: 550;
-        /* above .bottom-nav (500), below .bottom-nav-sheet (600) */
         background: transparent;
     }
 
     .bottom-nav.profile-active>.bottom-nav-link.active {
         color: #cfe9e9;
-        /* same as default inactive color */
     }
 }

@@ -31,6 +31,7 @@ function RecommendationLoader() {
       <div className="spinner"></div>
       <h3>Recommending books ...</h3>
       <p>{message}</p>
+      <p>{seconds}</p>
     </div>
   );
 }

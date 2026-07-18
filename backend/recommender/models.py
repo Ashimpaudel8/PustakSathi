@@ -8,7 +8,7 @@ class Book(models.Model):
         max_length=13,
         unique=True,
         validators=[
-            MinLengthValidator(10, message="ISBN must be exactly 10 digits."),
+            MinLengthValidator(10, message="ISBN must be min 10 digits."),
             RegexValidator(
                 regex=r'^\d+$',
                 message="ISBN must contain digits only."
