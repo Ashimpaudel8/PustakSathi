@@ -62,6 +62,7 @@ INSTALLED_APPS = [
     "corsheaders",
     "rest_framework_simplejwt",
     "recommender",
+    "import_export",
 ]
 
 MIDDLEWARE = [

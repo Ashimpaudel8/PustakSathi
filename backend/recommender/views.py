@@ -483,7 +483,7 @@ class WishlistDelete(generics.DestroyAPIView):
 def get_wishlist_recommendation_view(request):
 
     posts = request.data.get("wishlists", [])
-    titles = ([item.get("title")] for item in posts)
+    titles = (item.get("title") for item in posts)
 
     selected_idx = [
         data_store.indices_title[normalize_title(title)]

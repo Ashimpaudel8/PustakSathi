@@ -44,7 +44,7 @@
 @media (max-width: 1024px) {
     .search-div {
         width: 80%;
-        margin: 0 auto;
+        margin: 10px 0 10px auto;
     }
 
     .mobile-search-toggle,
@@ -56,14 +56,17 @@
 /* ===== Mobile Search ===== */
 @media (max-width: 600px) {
     .search-container {
-        top: 64px;
+        top: 70px;
         background: transparent;
         padding: 0;
+        position: fixed;
+        right: 5px;
+        width: stretch;
     }
 
     .search-div {
         width: fit-content;
-        margin: 10px 0 10px auto;
+        margin: 0px 10px 0px auto;
         padding: 8px;
         background: var(--search-container-bg);
         border-radius: 16px;
@@ -94,8 +97,7 @@
     /* Expanded */
     .search-div.mobile-expanded {
         width: 95%;
-        margin: 10px auto;
-        /* center when expanded */
+        margin: 0px auto;
         padding: 8px 10px;
     }
 
