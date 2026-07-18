@@ -19,7 +19,8 @@
     }
 
     .nav-container>span {
-        display: none;
+        font-size: 14px;
+        white-space: nowrap;
     }
 
     .loggedout-div {
@@ -160,8 +161,9 @@
     }
 
     .search-suggestions {
-        left: 15px;
-        width: 90%;
+        right: 0%;
+        left: 0;
+        width: 150%;
         font-size: 14px;
         padding: 5px;
     }
@@ -272,6 +274,7 @@
 
     .singleimg-div {
         margin-right: 0px;
+        align-self: center;
     }
 
     .singlebook-metadata {
@@ -344,7 +347,6 @@
     }
 
     .close-btn {
-        right: 34%;
         font-size: 18px;
     }
 }

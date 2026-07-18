@@ -3,11 +3,20 @@ import api from "../api";
 import "../styles/components/SearchBar.css";
 import { usePageState } from "../context/PageStateContext";
 
-function SearchBar({ setRecommendations, setSingleBook, setIsDiscover, setIsRecommending }) {
+function SearchBar({
+  setRecommendations,
+  setSingleBook,
+  setIsDiscover,
+  setIsRecommending,
+  setIsError,
+  search,
+  setSearch, }) {
+
   const inputRef = useRef(null);
   const searchContainerRef = useRef(null);
   const [mobileSearchOpen, setMobileSearchOpen] = useState(false);
   const [isMobile, setIsMobile] = useState(window.innerWidth <= 600);
+
 
   useEffect(() => {
     const handleTouchMove = () => {
@@ -50,7 +59,6 @@ function SearchBar({ setRecommendations, setSingleBook, setIsDiscover, setIsReco
   }, []);
 
   const { usePersistedState } = usePageState();
-  const [search, setSearch] = usePersistedState("dashboard.searchText", "");
   const [books, setBooks] = useState([]);
   const [searchBy, setSearchBy] = usePersistedState("dashboard.searchBy", "q");
 
@@ -118,9 +126,17 @@ function SearchBar({ setRecommendations, setSingleBook, setIsDiscover, setIsReco
     try {
       setIsRecommending(true);
       setIsDiscover(false);
+      setIsError(false);
       const res = await api.get("/api/books/recommend/", {
         params: { [searchBy]: search },
       });
+      console.log(res.data.error);
+      if (res.data.error) {
+        setRecommendations([]);
+        setIsError(true);
+        setSingleBook(null)
+        return;
+      }
       setRecommendations(res.data.Recommendations);
       setSingleBook(res.data.single_book_detail);
     } catch (err) {
@@ -138,6 +154,7 @@ function SearchBar({ setRecommendations, setSingleBook, setIsDiscover, setIsReco
     try {
       setIsRecommending(true);
       setIsDiscover(false);
+      setIsError(false);
       const res = await api.get("/api/books/recommend/", { params: { q: title } });
       setRecommendations(res.data.Recommendations);
       setSingleBook(res.data.single_book_detail);
@@ -173,7 +190,7 @@ function SearchBar({ setRecommendations, setSingleBook, setIsDiscover, setIsReco
       )}
 
       <div className="search-input-wrap" ref={searchContainerRef}>
-        <input 
+        <input
           className="search-box"
           ref={inputRef}
           type="text"
@@ -185,33 +202,41 @@ function SearchBar({ setRecommendations, setSingleBook, setIsDiscover, setIsReco
           }
           onChange={handleChange}
           onFocus={fetchSuggestions}
+          onKeyDown={(e) => {
+            if (e.key === "Enter") {
+              handleSearchClick(e);
+            }
+          }}
         />
 
-        {showSuggestions && books.length > 0 && (
-          <div className="search-suggestions">
-            {books.map((book) => (
-              <div 
-                className="search-suggest"
-                key={book.id}
-                onClick={() => handleBookClick(book.title)}
-              >
-                {book.title}
-              </div>
-            ))}
-          </div>
-        )}
-        
-        {/* FIXED: Button now toggles purely on string text existence and triggers field clearance */}
-        {search.trim().length > 0 && (
-          <button 
-            type="button" 
-            className="close-btn" 
-            onClick={handleClearSearch}
-            aria-label="Clear search text"
-          >
-            <i className="fa-solid fa-xmark"></i>
-          </button>
-        )}
+        {
+          showSuggestions && books.length > 0 && (
+            <div className="search-suggestions">
+              {books.map((book) => (
+                <div
+                  className="search-suggest"
+                  key={book.id}
+                  onClick={() => handleBookClick(book.title)}
+                >
+                  {book.title}
+                </div>
+              ))}
+            </div>
+          )
+        }
+
+        {
+          search.trim().length > 0 && (
+            <button
+              type="button"
+              className="close-btn"
+              onClick={handleClearSearch}
+              aria-label="Clear search text"
+            >
+              <i className="fa-solid fa-xmark"></i>
+            </button>
+          )
+        }
       </div>
 
       <button

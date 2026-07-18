@@ -1,5 +1,6 @@
 .dashboard-layout {
     display: flex;
+    min-height: 100vh;
 }
 
 .page-content {
@@ -16,6 +17,7 @@
     .page-content {
         padding: 5px;
         padding-bottom: 75px;
+        min-height: 100vh;
     }
 }
 

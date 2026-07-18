@@ -3,6 +3,7 @@
     padding: 0;
     box-sizing: border-box;
 }
+
 html {
     scrollbar-gutter: stable;
 }
@@ -16,3 +17,13 @@ body {
     overflow-y: scroll;
 }
 
+body.dark-theme {
+    background: #121212;
+    color: #f1f1f1;
+}
+
+@media (max-width: 1024px) {
+    body {
+        padding-top: 64px;
+    }
+}

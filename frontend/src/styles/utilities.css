@@ -16,14 +16,24 @@
 }
 
 .get-recommend-btn {
-    font-size: 16px;
-    border: 3px solid var(--accent-blue);
-    border-radius: 15px;
-    cursor: pointer;
-    padding: 5px;
-    color: var(--accent-blue);
     font-size: 18px;
     font-weight: 800;
-    background: var(--recommend-bg);
+    border: none;
+    border-radius: 15px;
+    cursor: pointer;
+    padding: 8px 18px;
+    color: #ffffff;
+    background: linear-gradient(45deg, var(--accent-gradient-start), var(--accent-gradient-end));
     margin: 15px;
+    transition: transform 0.15s ease, box-shadow 0.15s ease, filter 0.15s ease;
+}
+
+.get-recommend-btn:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(18, 69, 252, 0.35);
+}
+
+.get-recommend-btn:active {
+    transform: translateY(0) scale(0.97);
+    filter: brightness(0.95);
 }

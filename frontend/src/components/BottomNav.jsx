@@ -9,17 +9,6 @@ function BottomNav() {
     const { user, logout } = useAuth();
     const { theme, toggleTheme } = useTheme();
     const navigate = useNavigate();
-    const profileRef = useRef(null);
-
-    useEffect(() => {
-        function handleClickOutside(e) {
-            if (profileRef.current && !profileRef.current.contains(e.target)) {
-                setProfileOpen(false);
-            }
-        }
-        document.addEventListener("mousedown", handleClickOutside);
-        return () => document.removeEventListener("mousedown", handleClickOutside);
-    }, []);
 
     const handleLogout = () => {
         setProfileOpen(false);
@@ -28,28 +17,34 @@ function BottomNav() {
     };
 
     return (
-        <nav className="bottom-nav">
+        <nav className={`bottom-nav${profileOpen ? " profile-active" : ""}`}>
             <NavLink
                 to="/dashboard"
                 className={({ isActive }) => isActive ? "bottom-nav-link active" : "bottom-nav-link"}
             >
                 <i className="fa-solid fa-magnifying-glass"></i>
+                <span className="bottom-nav-label">Search</span>
             </NavLink>
             <NavLink
                 to="/wishlist"
                 className={({ isActive }) => isActive ? "bottom-nav-link active" : "bottom-nav-link"}
             >
                 <i className="fa-solid fa-heart"></i>
+                <span className="bottom-nav-label">Wishlists</span>
             </NavLink>
             <NavLink
                 to="/readbooks"
                 className={({ isActive }) => isActive ? "bottom-nav-link active" : "bottom-nav-link"}
             >
                 <i className="fa-solid fa-book"></i>
+                <span className="bottom-nav-label">ReadBooks</span>
             </NavLink>
 
-            <div className="bottom-nav-profile" ref={profileRef}>
-                <button className="bottom-nav-link" onClick={() => setProfileOpen((o) => !o)}>
+            {profileOpen && (
+                <div className="bottom-nav-overlay" onClick={() => setProfileOpen(false)} />
+            )}
+            <div className="bottom-nav-profile">
+                <button className={`bottom-nav-link${profileOpen ? " active" : ""}`} onClick={() => setProfileOpen((o) => !o)}>
                     <i className="fa-solid fa-user"></i>
                 </button>
 

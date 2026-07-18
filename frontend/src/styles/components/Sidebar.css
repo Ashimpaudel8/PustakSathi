@@ -31,6 +31,7 @@
     justify-content: flex-start;
     gap: 15px;
     align-items: center;
+    transition: background 0.15s ease, color 0.15s ease;
 }
 
 .side-link:hover {
@@ -54,10 +55,15 @@
     background: transparent;
     font-size: 22px;
     cursor: pointer;
+    transition: background 0.15s ease, transform 0.15s ease;
 }
 
 .hamburger:hover {
     background: var(--sidebar-hamburger-hover);
+}
+
+.hamburger:active {
+    transform: scale(0.92);
 }
 
 .sidebar.collapsed .side-link {

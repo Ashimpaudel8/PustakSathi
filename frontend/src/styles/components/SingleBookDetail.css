@@ -6,13 +6,15 @@
 }
 
 .singleimg-div {
+    width: 320px;
     height: 420px;
-    margin-right: 20px;
-    align-self: center;
+    flex-shrink: 0;
+    overflow: hidden;
 }
 
 .singleimg-div>img {
     height: 100%;
+    width: 100%;
     object-fit: cover;
     display: block;
     border-radius: 10px;

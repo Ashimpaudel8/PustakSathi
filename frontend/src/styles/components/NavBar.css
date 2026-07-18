@@ -54,6 +54,7 @@
     min-width: 25px;
     display: flex;
     gap: 8px;
+    transition: background 0.15s ease, border-color 0.15s ease;
 }
 
 .dropdown-menu {
@@ -146,6 +147,29 @@
 
 .dropdown-menu.dark-theme .logout-div:hover {
     background: #2a1418;
+}
+
+.dropdown-button,
+.logout-div {
+    transition: background 0.15s ease;
+}
+
+.theme-toggle-btn {
+    transition: background 0.15s ease, transform 0.15s ease;
+}
+
+.theme-toggle-btn:active {
+    transform: scale(0.9);
+}
+
+.dropdown-menu {
+    animation: dropdownIn 0.15s ease;
+    transform-origin: top right;
+}
+
+@keyframes dropdownIn {
+    from { opacity: 0; transform: scale(0.95) translateY(-4px); }
+    to   { opacity: 1; transform: scale(1) translateY(0); }
 }
 
 @media (max-width: 1024px) {

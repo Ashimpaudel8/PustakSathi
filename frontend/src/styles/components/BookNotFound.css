@@ -1,0 +1,74 @@
+/* Container styling for a clean, card-like empty state */
+.book-not-found-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  padding: 48px 24px;
+  max-width: 500px;
+  margin: 40px auto;
+  background-color: var(--card-bg, #f9fafb);
+  border: 2px dashed var(--card-border, #e5e7eb);
+  border-radius: 12px;
+  font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+}
+
+.bnf-icon {
+  font-size: 56px;
+  margin-bottom: 16px;
+  opacity: 0.9;
+}
+
+.bnf-title {
+  font-size: 24px;
+  font-weight: 700;
+  color: var(--text-primary, #111827);
+  margin: 0 0 12px 0;
+}
+
+.bnf-description {
+  font-size: 16px;
+  color: var(--text-secondary, #4b5563);
+  margin: 0 0 28px 0;
+  line-height: 1.5;
+}
+
+.bnf-suggestions-box {
+  background-color: var(--collapsible-bg, #ffffff);
+  border: 1px solid var(--collapsible-border, #e5e7eb);
+  border-radius: 8px;
+  padding: 20px 24px;
+  width: 100%;
+  box-sizing: border-box;
+  text-align: left;
+  margin-bottom: 32px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+}
+
+.bnf-suggestions-box h3 {
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--text-primary, #374151);
+  margin: 0 0 12px 0;
+}
+
+.bnf-suggestions {
+  margin: 0;
+  padding-left: 20px;
+  color: var(--text-secondary, #4b5563);
+  font-size: 14px;
+  line-height: 1.6;
+}
+
+.bnf-suggestions li {
+  margin-bottom: 6px;
+}
+
+.bnf-suggestions li:last-child {
+  margin-bottom: 0;
+}
+
+.dashboard-layout.dark-theme .bnf-suggestions-box {
+  box-shadow: none;
+}

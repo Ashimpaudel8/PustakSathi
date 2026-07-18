@@ -7,6 +7,7 @@ import { useLocation, useNavigate } from "react-router-dom";
 import api from "../api";
 import { usePageState } from "../context/PageStateContext";
 import RecommendationLoader from "../components/RecommendationLoader";
+import BookNotFound from "../components/BookNotFound";
 import "../styles/pages/Dashboard.css"
 
 function Dashboard() {
@@ -15,12 +16,14 @@ function Dashboard() {
   const [recommendations, setRecommendations] = usePersistedState("dashboard.recommendations", []);
   const [isDiscover, setIsDiscover] = usePersistedState("dashboard.isDiscover", true);
   const [singleBook, setSingleBook] = usePersistedState("dashboard.singleBook", null);
+  const [search, setSearch] = usePersistedState("dashboard.searchText", "");
   const [isRecommending, setIsRecommending] = useState(null);
   const location = useLocation();
   const openTitle = location.state?.openTitle;
   const focusSearch = location.state?.focusSearch;
   const initialOpenTitle = useRef(openTitle);
   const loadingRef = useRef(null);
+  const [isError, setIsError] = useState(false);
 
   useEffect(() => {
     if (isRecommending && loadingRef.current) {
@@ -76,9 +79,11 @@ function Dashboard() {
         <SearchBar
           setRecommendations={setRecommendations}
           setSingleBook={setSingleBook}
-          focusSearch={focusSearch}
           setIsDiscover={setIsDiscover}
           setIsRecommending={setIsRecommending}
+          setIsError={setIsError}
+          search={search}
+          setSearch={setSearch}
         />
       </div>
       <div className="dashboard-content-div">
@@ -92,14 +97,20 @@ function Dashboard() {
             <h1>Recommendations :</h1>
           )
         }
-        {isRecommending ?
-          <div ref={loadingRef}>
-            <RecommendationLoader />
-          </div>
-          : <RecommendedList
-            recommendations={recommendations}
-            setRecommendations={setRecommendations}
-          />}
+        {
+          isError ? (
+            <BookNotFound search={search} />
+          ) : isRecommending ? (
+            <div ref={loadingRef}>
+              <RecommendationLoader />
+            </div>
+          ) : (
+            <RecommendedList
+              recommendations={recommendations}
+              setRecommendations={setRecommendations}
+            />
+          )
+        }
       </div>
     </>
   );
