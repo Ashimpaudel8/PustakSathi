@@ -2,6 +2,8 @@ import json, time, requests, re, os, string, json, random
 from django.contrib.auth.models import User
 from .serializers import UserSerializer, BookSerializer, ReadBooksSerializer, WishlistSerializer
 from .models import Book, ReadBooks, Wishlist
+from django.db.models import Case, When, Value, IntegerField
+from django.db.models.functions import Length
 from django.http import JsonResponse
 from rest_framework import generics
 from rest_framework.decorators import api_view, permission_classes
@@ -36,7 +38,20 @@ class ReadBookView(generics.ListAPIView):
         if not query:
             return Book.objects.none()
 
-        return Book.objects.filter(title__icontains=query)[:10]
+        return (
+            Book.objects
+            .filter(title__icontains=query)
+            .annotate(
+                priority=Case(
+                    When(title__iexact=query, then=Value(0)),
+                    When(title__istartswith=query, then=Value(1)),
+                    default=Value(2),
+                    output_field=IntegerField(),
+                ),
+                title_len=Length("title"),
+            )
+            .order_by("priority", "title_len", "title")[:10]
+        )
 
 
 CACHE_TIMEOUT_HIT = 60 * 60    # 1 hour — successful lookups (found thumbnail)
@@ -204,7 +219,7 @@ def get_recommendation_view(request):
 
     if not selected_idx:
         return Response(
-            {"Recommendations": []}
+            {"error": ["Book Not Found in Database."]}
         )
     
     single_book = data_store.combined_df.iloc[selected_idx[0]]
