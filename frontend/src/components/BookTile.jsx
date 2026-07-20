@@ -29,7 +29,7 @@ function BookTile({ book, action1, action2 }) {
               book.thumbnail_url
                 ? book.thumbnail_url
                 : book.thumbnail_id
-                  ? `https://covers.openlibrary.org/b/id/${book.thumbnail_id}-M.jpg`
+                  ? `https://covers.openlibrary.org/b/id/${book.thumbnail_id}-L.jpg`
                   : defaultBookCover
             }
             alt="Book Thumbnail"

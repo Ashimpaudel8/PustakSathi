@@ -10,6 +10,7 @@ from rest_framework.decorators import api_view, permission_classes
 from rest_framework.permissions import AllowAny, IsAuthenticated, IsAdminUser
 from rest_framework.decorators import api_view, permission_classes
 from rest_framework.response import Response
+from rest_framework.exceptions import ValidationError
 from concurrent.futures import ThreadPoolExecutor
 from sklearn.metrics.pairwise import cosine_similarity
 import numpy as np
@@ -227,8 +228,12 @@ def get_recommendation_view(request):
     print(single_book["author"])
     print(single_book["description"])
     print(single_book["isbn"])
-    single_book_result = get_book_detail(single_book["title"], single_book["author"], single_book["description"], single_book["isbn"])
-    # single_book_result = {"None": "gg"}
+    single_book_result = get_book_detail(
+        single_book["title"], 
+        single_book["author"], 
+        single_book["description"], 
+        single_book["isbn"]
+    )
     
     user_vector = np.asarray(data_store.vectorized_matrix[selected_idx].mean(axis=0))
     sim_score = cosine_similarity(user_vector, data_store.vectorized_matrix)[0]
@@ -281,6 +286,13 @@ def get_recommendation_view(request):
         .values_list("book__isbn", flat=True)
     )
 
+    single_book_result["is_wishlisted"] = (
+        single_book_result["isbn"] in wishlist_isbns
+    )
+    single_book_result["is_read"] = (
+        single_book_result["isbn"] in read_isbns
+    )
+
     for book in response_list:
         book["is_wishlisted"] = book["isbn"] in wishlist_isbns
         book["is_read"] = book["isbn"] in read_isbns
@@ -324,6 +336,14 @@ class ReadBooksListCreate(generics.ListCreateAPIView):
     def perform_create(self, serializer):
         isbn = self.request.data["isbn"]
         book = Book.objects.get(isbn = isbn)
+
+        book_count = ReadBooks.objects.filter(user = self.request.user).count()
+
+        if (book_count >= 30):
+            raise ValidationError({
+                "code": "READBOOKS_LIMIT_REACHED",
+                "message": "You can only add up to 30 books."
+            })
 
         already_read = ReadBooks.objects.filter(user=self.request.user, book=book).exists()
     
@@ -460,6 +480,14 @@ class WishlistListCreate(generics.ListCreateAPIView):
     def perform_create(self, serializer):
         isbn = self.request.data["isbn"]
         book = Book.objects.get(isbn = isbn)
+
+        book_count = Wishlist.objects.filter(user = self.request.user).count()
+
+        if (book_count >= 30):
+            raise ValidationError({
+                "code": "WISHLISTS_LIMIT_REACHED",
+                "message": "You can only add up to 30 books."
+            })
 
         already_wishlist = Wishlist.objects.filter(user=self.request.user, book=book).exists()
     

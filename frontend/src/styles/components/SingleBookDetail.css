@@ -2,7 +2,7 @@
     display: flex;
     border: 2px solid var(--sidebar-bg);
     border-radius: 10px;
-    padding: 10px;
+    padding-left: 10px;
 }
 
 .singleimg-div {
@@ -10,6 +10,8 @@
     height: 420px;
     flex-shrink: 0;
     overflow: hidden;
+    align-self: center;
+    padding: 5px;
 }
 
 .singleimg-div>img {
@@ -22,7 +24,7 @@
 
 .singlebook-metadata {
     margin-left: 10px;
-    padding-top: 20px;
+    padding-top: 5px;
     font-family: "Inter", sans-serif;
     font-size: 15px;
 }
@@ -60,4 +62,10 @@
     margin: 3px 0px;
     font-size: 16px;
     color: var(--text-secondary);
+}
+
+.singlebook-buttons-container {
+  display: flex;
+  gap: 10px;
+  margin-bottom: 12px;
 }

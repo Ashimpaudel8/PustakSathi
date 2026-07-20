@@ -21,7 +21,7 @@
 }
 
 .nav-link:hover {
-  color: #d0e8e8;
+    color: #d0e8e8;
 }
 
 .home-link {
@@ -68,7 +68,7 @@
     border-radius: 6px;
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
     width: max-content;
-    max-width: 50vw; 
+    max-width: 50vw;
     z-index: 10;
     font-size: 16px;
 }
@@ -95,6 +95,7 @@
     justify-content: center;
     align-items: center;
 }
+
 .logout-div:hover {
     background: #fff5f5;
 }
@@ -102,14 +103,20 @@
 .fa-solid {
     position: relative;
     top: 1.5px
-    
 }
 
 .loggedout-div {
     font-size: 18px;
-    width: 18%;
     display: flex;
-    justify-content: space-evenly;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 18px;
+    margin-right: 30px;
+    flex-shrink: 0;
+}
+
+.theme-toggle-btn-public {
+    flex-shrink: 0;
 }
 
 .theme-toggle-btn {
@@ -168,13 +175,33 @@
 }
 
 @keyframes dropdownIn {
-    from { opacity: 0; transform: scale(0.95) translateY(-4px); }
-    to   { opacity: 1; transform: scale(1) translateY(0); }
+    from {
+        opacity: 0;
+        transform: scale(0.95) translateY(-4px);
+    }
+
+    to {
+        opacity: 1;
+        transform: scale(1) translateY(0);
+    }
 }
 
 @media (max-width: 1024px) {
-    .theme-toggle-btn,
+
+    .navbar.has-bottom-toggle .nav-container .theme-toggle-btn,
     .nav-profile-wrap {
         display: none;
+    }
+
+    .loggedout-div {
+        gap: 12px;
+        font-size: 15px;
+        margin-right: 15px;
+    }
+
+    .theme-toggle-btn-public {
+        width: 32px;
+        height: 32px;
+        font-size: 14px;
     }
 }

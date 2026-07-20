@@ -272,16 +272,17 @@
 @media (max-width: 1024px) {
     .singlebook-div {
         flex-direction: column;
-    }
-
-    .singleimg-div {
-        margin-right: 0px;
-        align-self: center;
+        padding: 10px;
     }
 
     .singlebook-metadata {
         padding-top: 10px;
         font-size: 13px;
+        margin-left: 5px;
+    }
+
+    .singleimg-div {
+        padding: 0px;
     }
 
     .singlebook-metadata .title {

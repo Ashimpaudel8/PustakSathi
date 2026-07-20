@@ -2,7 +2,6 @@ import React, { useEffect, useState, useRef } from "react";
 import api from "../api";
 import BookTile from "../components/BookTile";
 import RecommendedList from "../components/RecommendedList";
-import { Link } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 import { usePageState } from "../context/PageStateContext";
 import RecommendationLoader from "../components/RecommendationLoader";
@@ -15,6 +14,7 @@ function ReadBooks() {
   const [isReadBooksCollapsed, setIsReadBooksCollapsed] = usePersistedState("readbooks.isCollapsed", false);
   const [recommendations, setRecommendations] = usePersistedState("readbooks.recommendations", []);
   const [isRecommending, setIsRecommending] = useState(null);
+  const [isLoading, setIsLoading] = useState(null);
   const { fetchUser } = useAuth();
   const loadingRef = useRef(null);
 
@@ -44,6 +44,7 @@ function ReadBooks() {
 
   useEffect(() => {
     if (hasFetchedReadBooks) return;
+    setIsLoading(true);
     api
       .get("/api/readbooks/")
       .then((res) => {
@@ -52,7 +53,8 @@ function ReadBooks() {
       })
       .catch((err) => {
         console.error("Error fetching books:", err);
-      });
+      })
+      .finally(() => { setIsLoading(false) });
   }, []);
 
   const handleGetRecommendations = (e) => {
@@ -88,27 +90,33 @@ function ReadBooks() {
         </button>
 
         {!isReadBooksCollapsed && (
-          <div className="readbooks-book-grid">
-            {readBooks.map((book) => {
-              return (
-                <BookTile
-                  key={book.isbn}
-                  book={book}
-                  action1={
-                    <div className="readbooks-btn-container">
-                      <button
-                        onClick={(e) => handleDelete(e, book)}
-                        className="removereadbooks-btn"
-                      >
-                        <i class="fa-solid fa-trash-can"></i>
-                        Delete
-                      </button>
-                    </div>
-                  }
-                />
-              );
-            })}
-          </div>
+          isLoading ? (
+            <div>
+              <RecommendationLoader />
+            </div>
+          ) : (
+            <div className="readbooks-book-grid">
+              {readBooks.map((book) => {
+                return (
+                  <BookTile
+                    key={book.isbn}
+                    book={book}
+                    action1={
+                      <div className="readbooks-btn-container">
+                        <button
+                          onClick={(e) => handleDelete(e, book)}
+                          className="removereadbooks-btn"
+                        >
+                          <i class="fa-solid fa-trash-can"></i>
+                          Delete
+                        </button>
+                      </div>
+                    }
+                  />
+                );
+              })}
+            </div>
+          )
         )}
       </div>
       <h1>Recommended Books :</h1>
@@ -117,7 +125,7 @@ function ReadBooks() {
         onClick={handleGetRecommendations}>Get Recommendations</button>
       {isRecommending ?
         <div ref={loadingRef}>
-          <RecommendationLoader />
+          <RecommendationLoader initialLoading={true} />
         </div>
         : <RecommendedList
           recommendations={recommendations}

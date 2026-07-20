@@ -12,8 +12,8 @@ const NavBar = () => {
   const menuRef = useRef(null);
   const location = useLocation();
   const { theme, toggleTheme } = useTheme();
-  const themedPaths = ["/dashboard", "/wishlist", "/readbooks"];
-  const showThemeToggle = themedPaths.includes(location.pathname);
+  const bottomNavPaths = ["/dashboard", "/wishlist", "/readbooks"];
+  const hasBottomNavToggle = bottomNavPaths.includes(location.pathname);
 
   const handleLogout = () => {
     logout();
@@ -35,7 +35,7 @@ const NavBar = () => {
   if (loading) return null;
 
   return (
-    <nav className="navbar flex">
+    <nav className={`navbar flex ${hasBottomNavToggle ? "has-bottom-toggle" : ""}`}>
       <Link className="home-link" to="/"><img src={logo} alt="Logo" className="logo" /></Link>
       {isAuthenticated ? (
         <div className="nav-container flex">
@@ -47,19 +47,17 @@ const NavBar = () => {
           >
             Search
           </NavLink>
-          {showThemeToggle && (
-            <button
-              className="theme-toggle-btn"
-              onClick={toggleTheme}
-              aria-label="Toggle dark mode"
-            >
-              {theme === "light" ? (
-                <i className="fa-solid fa-moon"></i>
-              ) : (
-                <i className="fa-solid fa-sun"></i>
-              )}
-            </button>
-          )}
+          <button
+            className="theme-toggle-btn"
+            onClick={toggleTheme}
+            aria-label="Toggle dark mode"
+          >
+            {theme === "light" ? (
+              <i className="fa-solid fa-moon"></i>
+            ) : (
+              <i className="fa-solid fa-sun"></i>
+            )}
+          </button>
           <div ref={menuRef} className="nav-profile-wrap" style={{ position: "relative" }}>
             <button
               className="nav-user-trigger"
@@ -102,6 +100,17 @@ const NavBar = () => {
         </div>
       ) : (
         <div className="loggedout-div">
+          <button
+            className="theme-toggle-btn theme-toggle-btn-public"
+            onClick={toggleTheme}
+            aria-label="Toggle dark mode"
+          >
+            {theme === "light" ? (
+              <i className="fa-solid fa-moon"></i>
+            ) : (
+              <i className="fa-solid fa-sun"></i>
+            )}
+          </button>
           <Link className="nav-link" to="/login">Login</Link>
           <Link className="nav-link" to="/register">Register</Link>
         </div>

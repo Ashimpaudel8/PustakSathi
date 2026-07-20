@@ -18,6 +18,7 @@ function Dashboard() {
   const [singleBook, setSingleBook] = usePersistedState("dashboard.singleBook", null);
   const [search, setSearch] = usePersistedState("dashboard.searchText", "");
   const [isRecommending, setIsRecommending] = useState(null);
+  const [isLoading, setIsLoading] = useState(null);
   const location = useLocation();
   const openTitle = location.state?.openTitle;
   const focusSearch = location.state?.focusSearch;
@@ -39,8 +40,16 @@ function Dashboard() {
     if (recommendations.length > 0) return;
 
     const fetchBook = async () => {
-      const res = await api.get("/api/discover/");
-      setRecommendations(res.data.Discover_Something_New);
+      setIsLoading(true);
+      try {
+        const res = await api.get("/api/discover/");
+        setRecommendations(res.data.Discover_Something_New);
+      }
+      catch (err) {
+        console.error(err);
+      } finally {
+        setIsLoading(false);
+      }
     };
 
     fetchBook();
@@ -61,6 +70,7 @@ function Dashboard() {
 
         setIsDiscover(false);
         setRecommendations(res.data.Recommendations);
+        console.log(res.data.single_book_detail);
         setSingleBook(res.data.single_book_detail);
         navigate(location.pathname, { replace: true, state: {} });
       } catch (err) {
@@ -88,7 +98,7 @@ function Dashboard() {
       </div>
       <div className="dashboard-content-div">
         {singleBook &&
-          <SingleBookDetail book={singleBook} />
+          <SingleBookDetail book={singleBook} setSingleBook={setSingleBook} />
         }
         {
           isDiscover ? (
@@ -102,7 +112,11 @@ function Dashboard() {
             <BookNotFound search={search} />
           ) : isRecommending ? (
             <div ref={loadingRef}>
-              <RecommendationLoader />
+              <RecommendationLoader initialLoading={true} />
+            </div>
+          ) : isLoading ? (
+            <div>
+              <RecommendationLoader  />
             </div>
           ) : (
             <RecommendedList

@@ -1,6 +1,7 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import BookTile from "./BookTile";
 import RatingModal from "./RatingModal";
+import LimitModal from "./LimitModal";
 import api from "../api";
 import { useAuth } from "../context/AuthContext";
 import { usePageState } from "../context/PageStateContext";
@@ -19,6 +20,7 @@ function RecommendedList({
   const [hasFetchedWishlist] = usePersistedState("wishlist.fetched", false);
   const [, setCachedReadBooks] = usePersistedState("readbooks.list", []);
   const [hasFetchedReadBooks] = usePersistedState("readbooks.fetched", false);
+  const [limitReached, setLimitReached] = useState(false);
 
   const handleMarkAsRead = (e, book) => {
     e.preventDefault();
@@ -43,8 +45,12 @@ function RecommendedList({
         );
         fetchUser();
       })
-      .catch((err) => {
-        console.error(err);
+      .catch((error) => {
+        const data = error.response?.data
+        if (data.code === "WISHLISTS_LIMIT_REACHED") {
+          console.log(data.message);
+          setLimitReached(true)
+        }
       });
   };
 
@@ -76,6 +82,12 @@ function RecommendedList({
           ),
         );
         fetchUser();
+      }).catch((error) => {
+        const data = error.response?.data
+        if (data.code === "READBOOKS_LIMIT_REACHED") {
+          console.log(data.message);
+          setLimitReached(true)
+        }
       });
     setRatingModalBook(null);
   };
@@ -94,8 +106,8 @@ function RecommendedList({
                   title="Mark as Read"
                   disabled={true}
                 >
-                  <i class="fa-solid fa-book-bookmark"></i>
-                  <i class="fa-solid fa-check"></i>
+                  <i className="fa-solid fa-book-bookmark"></i>
+                  <i className="fa-solid fa-check"></i>
                   Marked as Read
                 </button>
               ) : (
@@ -136,6 +148,11 @@ function RecommendedList({
           book={ratingModalBook}
           onSubmit={handleRatingSubmit}
           onCancel={() => setRatingModalBook(null)}
+        />
+      )}
+      {limitReached && (
+        <LimitModal
+          onCancel={() => { setLimitReached(false) }}
         />
       )}
     </>

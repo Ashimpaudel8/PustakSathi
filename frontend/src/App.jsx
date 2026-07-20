@@ -11,6 +11,8 @@ import Wishlist from "./pages/Wishlist";
 import ManageBackend from "./pages/ManageBackend";
 import NavBar from "./components/NavBar";
 import DashboardLayout from "./layouts/DashboardLayout";
+import { useLocation } from "react-router-dom";
+import Footer from "./components/Footer";
 import { useAuth } from "./context/AuthContext";
 
 function Logout() {
@@ -31,6 +33,12 @@ function RegisterAndLogout() {
   }, []);
 
   return <Register />;
+}
+
+function AppFooter() {
+  const location = useLocation();
+  if (location.pathname !== "/") return null;
+  return <Footer />;
 }
 
 function App() {
@@ -74,6 +82,7 @@ function App() {
         {/* 🛠️ Custom Admin Workspace Route */}
         <Route path="/manage/backend" element={<ManageBackend />} />
       </Routes>
+      <AppFooter />
     </>
 
   );

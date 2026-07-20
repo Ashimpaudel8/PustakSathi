@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import "../styles/components/RecommendationLoader.css";
 
-function RecommendationLoader() {
+function RecommendationLoader({ initialLoading }) {
   const [seconds, setSeconds] = useState(0);
 
   useEffect(() => {
@@ -13,6 +13,14 @@ function RecommendationLoader() {
   }, []);
 
   let message = "sth1";
+  let title = "titile";
+
+  if (initialLoading) {
+    title = "Recommending books ...";
+  }
+  else {
+    title = "Loading ...";
+  }
 
   if (seconds < 5) {
     message = "Getting your taste...";
@@ -29,8 +37,8 @@ function RecommendationLoader() {
   return (
     <div className="recommendation-loader">
       <div className="spinner"></div>
-      <h3>Recommending books ...</h3>
-      <p>{message}</p>
+      <h3>{title}</h3>
+      {initialLoading && (<p>{message}</p>)}
       <p>{seconds}</p>
     </div>
   );

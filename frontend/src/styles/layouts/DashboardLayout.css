@@ -1,6 +1,6 @@
 .dashboard-layout {
     display: flex;
-    min-height: 100vh;
+    min-height: calc(100vh - var(--navbar-height));
 }
 
 .page-content {
@@ -17,7 +17,6 @@
     .page-content {
         padding: 5px;
         padding-bottom: 75px;
-        min-height: 100vh;
+        min-height: calc(100vh - 64px);
     }
 }
-

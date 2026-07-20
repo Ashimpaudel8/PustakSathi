@@ -2,7 +2,6 @@ import React, { useEffect, useState, useRef } from "react";
 import api from "../api";
 import BookTile from "../components/BookTile";
 import RecommendedList from "../components/RecommendedList";
-import { Link } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 import { usePageState } from "../context/PageStateContext";
 import RecommendationLoader from "../components/RecommendationLoader";
@@ -15,6 +14,7 @@ function Wishlist() {
   const [isWishlistCollapsed, setIsWishlistCollapsed] = usePersistedState("wishlist.isCollapsed", false);
   const [recommendations, setRecommendations] = usePersistedState("wishlist.recommendations", []);
   const [isRecommending, setIsRecommending] = useState(null);
+  const [isLoading, setIsLoading] = useState(null);
   const { fetchUser } = useAuth();
   const loadingRef = useRef(null);
 
@@ -43,15 +43,16 @@ function Wishlist() {
   };
 
   const fetchWishlist = () => {
-    api
-      .get("/api/wishlist/")
+    setIsLoading(true);
+    api.get("/api/wishlist/")
       .then((res) => {
         setWishlist(res.data.Wishlists);
         setHasFetchedWishlist(true);
       })
       .catch((err) => {
         console.error("Error fetching books:", err);
-      });
+      })
+      .finally(() => { setIsLoading(false) });
   };
 
   useEffect(() => {
@@ -92,9 +93,13 @@ function Wishlist() {
         </button>
 
         {!isWishlistCollapsed && (
-          <div className="wishlist-book-grid">
-            {wishlist.map((book) => {
-              return (
+          isLoading ? (
+            <div>
+              <RecommendationLoader />
+            </div>
+          ) : (
+            <div className="wishlist-book-grid">
+              {wishlist.map((book) => (
                 <BookTile
                   key={book.isbn}
                   book={book}
@@ -110,9 +115,9 @@ function Wishlist() {
                     </div>
                   }
                 />
-              );
-            })}
-          </div>
+              ))}
+            </div>
+          )
         )}
       </div>
       <h1>Recommended Books :</h1>
@@ -121,7 +126,7 @@ function Wishlist() {
         onClick={handleGetRecommendations}>Get Recommendations</button>
       {isRecommending ?
         <div ref={loadingRef}>
-          <RecommendationLoader />
+          <RecommendationLoader initialLoading={true} />
         </div>
         : <RecommendedList
           recommendations={recommendations}
