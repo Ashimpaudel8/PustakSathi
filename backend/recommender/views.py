@@ -1,27 +1,26 @@
-import json, time, requests, re, os, string, json, random
+import json, time, requests, re, os, string, random
 from django.contrib.auth.models import User
 from .serializers import UserSerializer, BookSerializer, ReadBooksSerializer, WishlistSerializer
 from .models import Book, ReadBooks, Wishlist
-from django.db.models import Case, When, Value, IntegerField
+from django.db.models import Case, When, Value, IntegerField, Q
 from django.db.models.functions import Length
 from django.http import JsonResponse
 from rest_framework import generics
 from rest_framework.decorators import api_view, permission_classes
-from rest_framework.permissions import AllowAny, IsAuthenticated, IsAdminUser
-from rest_framework.decorators import api_view, permission_classes
+from rest_framework.permissions import AllowAny, IsAuthenticated, IsAdminUser, BasePermission
 from rest_framework.response import Response
 from rest_framework.exceptions import ValidationError
 from concurrent.futures import ThreadPoolExecutor
-from sklearn.metrics.pairwise import cosine_similarity
 import numpy as np
 from django.core.cache import cache
 from . import data_store
+from . import recommender
+
 
 from dotenv import load_dotenv
 load_dotenv()
 
 api_key = os.getenv("GOOGLE_BOOKS_API_KEY")
-
 
 class CreateUserView(generics.CreateAPIView):
     queryset = User.objects.all()
@@ -81,14 +80,15 @@ def clean_title(title):
     return title.strip()
 
 
-def get_book_detail(title, author, description, isbn):
-    cache_key = f"book_detail:isbn:{isbn}"
+def get_book_detail(book_id, title, author, description, genre, img, link):
+    cache_key = f"book_detail:{book_id}"
 
     cached_result = cache.get(cache_key)
     if cached_result is not None:
         return cached_result
 
-    result = _fetch_book_detail_fresh(title, author, description, isbn)
+    result = _fetch_book_detail_fresh(title, author, description, genre, img, link)
+    result["book_id"] = book_id
 
     found_something = bool(result["thumbnail_url"] or result["thumbnail_id"])
     timeout = CACHE_TIMEOUT_HIT if found_something else CACHE_TIMEOUT_MISS
@@ -96,21 +96,25 @@ def get_book_detail(title, author, description, isbn):
     cache.set(cache_key, result, timeout)
     return result
 
-def _fetch_book_detail_fresh(title, author, description, isbn):
+def _fetch_book_detail_fresh(title, author, description, genre, img, link):
+    description = description or ""
+    img = img or ""
+    genre = [genre] if genre else ["N/A"]
 
     data_dict = {
-        "isbn": isbn,
         "title": title,
+        "link": link,
         "authors": [author],
-        "publisher": "N/A",
-        "publishedDate": "N/A",
-        "thumbnail_url": "",
+        "thumbnail_url": img,
         "thumbnail_id": "",
-        "categories": ["N/A"],
+        "categories": genre,
         "description": description,
         "is_wishlisted": False,
         "is_read": False,
     }
+
+    if data_dict["thumbnail_url"]:
+        return data_dict
 
     # ---------- Google Books ----------
     google_titles = list(dict.fromkeys([
@@ -126,6 +130,7 @@ def _fetch_book_detail_fresh(title, author, description, isbn):
             continue
 
         try:
+            print(author)
             response_google = requests.get(
                 "https://www.googleapis.com/books/v1/volumes",
                 params={
@@ -151,13 +156,10 @@ def _fetch_book_detail_fresh(title, author, description, isbn):
     image_links = volume_info.get("imageLinks", {})
 
     data_dict["authors"] = volume_info.get("authors", [author])
-    data_dict["publisher"] = volume_info.get("publisher", "N/A")
-    data_dict["publishedDate"] = volume_info.get("publishedDate", "N/A")
     data_dict["thumbnail_url"] = image_links.get("thumbnail", "")
-    data_dict["categories"] = volume_info.get("categories", ["N/A"])
+    data_dict["categories"] = volume_info.get("categories", genre)
     data_dict["description"] = volume_info.get("description", description)
 
-    # Google already has thumbnail
     if data_dict["thumbnail_url"]:
         return data_dict
 
@@ -178,7 +180,7 @@ def _fetch_book_detail_fresh(title, author, description, isbn):
                 },
                 timeout=5,
             )
-            time.sleep(0.2)
+            time.sleep(0.5)
 
             response_open.raise_for_status()
 
@@ -198,104 +200,170 @@ def _fetch_book_detail_fresh(title, author, description, isbn):
     return data_dict
 
 
+def _books_from_positions(positions, limit=24, max_per_author=6, max_per_genre=12, required_genre_sets=None):
+    ids_in_order = [data_store.book_ids[p] for p in positions]
+    books_by_id = Book.objects.in_bulk(ids_in_order)
+
+    seen_titles = set()
+    author_counts = {}
+    genre_counts = {}
+    result = []
+    fallback_books = []
+    
+    # Track which seed genre sets still need to be fulfilled
+    unsatisfied_sets = list(required_genre_sets) if required_genre_sets else []
+    print(unsatisfied_sets)
+
+    for bid in ids_in_order:
+        book = books_by_id.get(bid)
+        if book is None:
+            continue
+        key = clean_title(book.title)
+        if key in seen_titles:
+            continue
+
+        authors = {
+            normalize_title(author.strip())
+            for author in (book.author or "").split(",")
+            if author.strip()
+        }
+
+        if any(author_counts.get(author, 0) >= max_per_author for author in authors):
+            continue
+
+        genres = {
+            normalize_title(genre.strip())
+            for genre in (book.genre or "").split(",")
+            if genre.strip()
+        }
+
+        if any(genre_counts.get(genre, 0) >= max_per_genre for genre in genres):
+            continue
+
+        # --- Genre Guarantee Logic ---
+        satisfies = [req for req in unsatisfied_sets if not req.isdisjoint(genres)]
+        slots_left = limit - len(result)
+        
+        if slots_left / 5 <= len(unsatisfied_sets) and not satisfies:
+            fallback_books.append(book)
+            continue
+        # -----------------------------
+
+        seen_titles.add(key)
+        
+        for author in authors:
+            author_counts[author] = author_counts.get(author, 0) + 1
+
+        for genre in genres:
+            genre_counts[genre] = genre_counts.get(genre, 0) + 1
+
+        result.append(book)
+        
+        for req in satisfies:
+            unsatisfied_sets.remove(req)
+
+        if len(result) == limit:
+            break
+            
+    # Fill any remaining slots with highly-ranked books we had to skip
+    if len(result) < limit:
+        for book in fallback_books:
+            key = clean_title(book.title)
+            if key in seen_titles:
+                continue
+                
+            authors = {
+                normalize_title(author.strip())
+                for author in (book.author or "").split(",")
+                if author.strip()
+            }
+            genres = {
+                normalize_title(genre.strip())
+                for genre in (book.genre or "").split(",")
+                if genre.strip()
+            }
+            
+            if any(author_counts.get(author, 0) >= max_per_author for author in authors):
+                continue
+            if any(genre_counts.get(genre, 0) >= max_per_genre for genre in genres):
+                continue
+                
+            seen_titles.add(key)
+            for author in authors:
+                author_counts[author] = author_counts.get(author, 0) + 1
+            for genre in genres:
+                genre_counts[genre] = genre_counts.get(genre, 0) + 1
+                
+            result.append(book)
+            if len(result) == limit:
+                break
+
+    return result
+
+
 @api_view(['GET'])
-@permission_classes([AllowAny])
+@permission_classes([IsAuthenticated])
 def get_recommendation_view(request):
 
     title = request.query_params.get("q", "").strip()
-    isbn = request.query_params.get("i", "").strip()
+    seed_book = Book.objects.filter(title__iexact=title).first()
 
-    if isbn:
-
-        selected_idx = [
-            data_store.indices_isbn.get(isbn.strip(), None)
-        ]
-
-    elif title:
-        selected_idx = [
-            data_store.indices_title.get(normalize_title(title), None)
-        ]
-
-    selected_idx = [idx for idx in selected_idx if idx is not None]
-
-    if not selected_idx:
+    if seed_book is None:
         return Response(
             {"error": ["Book Not Found in Database."]}
         )
-    
-    single_book = data_store.combined_df.iloc[selected_idx[0]]
-    print(single_book["title"])
-    print(single_book["author"])
-    print(single_book["description"])
-    print(single_book["isbn"])
+
+    seed_pos = data_store.id_to_idx.get(seed_book.id)
+    if seed_pos is None:
+        return Response(
+            {"error": ["Book Not Found in Database."]}
+        )
+    selected_idx = [seed_pos]
+
     single_book_result = get_book_detail(
-        single_book["title"], 
-        single_book["author"], 
-        single_book["description"], 
-        single_book["isbn"]
+        seed_book.id,
+        seed_book.title,
+        seed_book.author,
+        seed_book.description,
+        seed_book.genre,
+        seed_book.img,
+        seed_book.link,
     )
-    
-    user_vector = np.asarray(data_store.vectorized_matrix[selected_idx].mean(axis=0))
-    sim_score = cosine_similarity(user_vector, data_store.vectorized_matrix)[0]
+
+    sim_score = recommender.similarity_from_seeds(selected_idx)
     sim_score[selected_idx] = -1
-    sim_idx = np.argsort(sim_score)[::-1][:100]
+    sim_idx = np.argsort(sim_score)[::-1][:10000]
 
-    seen = set()
-    books = []
-
-    for idx in sim_idx:
-
-        book = data_store.combined_df.iloc[idx]
-
-        key = clean_title(book["title"])
-
-        if key in seen:
-            continue
-
-        seen.add(key)
-
-        books.append({
-            "title": book["title"],
-            "author": book["author"],
-            "description": book["description"],
-            "isbn": book["isbn"]
-        })
-
-        if len(books) == 8:
-            break
+    books = _books_from_positions(sim_idx)
 
     with ThreadPoolExecutor(max_workers=10) as executor:
         response_list = list(
             executor.map(
                 lambda book: get_book_detail(
-                    book["title"],
-                    book["author"],
-                    book["description"],
-                    book["isbn"]
-                ),
+                    book.id, 
+                    book.title, 
+                    book.author, 
+                    book.description, 
+                    book.genre, 
+                    book.img, 
+                    book.link),
                 books,
             )
         )
 
-    wishlist_isbns = set(
-        Wishlist.objects.filter(user = request.user)
-        .values_list("book__isbn", flat=True)
+    wishlist_ids = set(
+        Wishlist.objects.filter(user = request.user).values_list("book_id", flat=True)
     )
-    read_isbns = set(
-        ReadBooks.objects.filter(user = request.user)
-        .values_list("book__isbn", flat=True)
+    read_ids = set(
+        ReadBooks.objects.filter(user = request.user).values_list("book_id", flat=True)
     )
 
-    single_book_result["is_wishlisted"] = (
-        single_book_result["isbn"] in wishlist_isbns
-    )
-    single_book_result["is_read"] = (
-        single_book_result["isbn"] in read_isbns
-    )
+    single_book_result["is_wishlisted"] = single_book_result["book_id"] in wishlist_ids
+    single_book_result["is_read"] = single_book_result["book_id"] in read_ids
 
     for book in response_list:
-        book["is_wishlisted"] = book["isbn"] in wishlist_isbns
-        book["is_read"] = book["isbn"] in read_isbns
+        book["is_wishlisted"] = book["book_id"] in wishlist_ids
+        book["is_read"] = book["book_id"] in read_ids
 
     return Response({"single_book_detail": single_book_result, "Recommendations": response_list})
 
@@ -318,10 +386,13 @@ class ReadBooksListCreate(generics.ListCreateAPIView):
                 executor.map(
                     lambda readbook: {
                         **get_book_detail(
+                            readbook.book.id,
                             readbook.book.title,
                             readbook.book.author,
                             readbook.book.description,
-                            readbook.book.isbn
+                            readbook.book.genre,
+                            readbook.book.img,
+                            readbook.book.link,
                         ),
                         "readbook_id": readbook.id,
                         "review": readbook.review,
@@ -334,8 +405,8 @@ class ReadBooksListCreate(generics.ListCreateAPIView):
         return Response({"ReadBooks": response_list})
         
     def perform_create(self, serializer):
-        isbn = self.request.data["isbn"]
-        book = Book.objects.get(isbn = isbn)
+        book_id = self.request.data["book_id"]
+        book = Book.objects.get(id = book_id)
 
         book_count = ReadBooks.objects.filter(user = self.request.user).count()
 
@@ -348,18 +419,27 @@ class ReadBooksListCreate(generics.ListCreateAPIView):
         already_read = ReadBooks.objects.filter(user=self.request.user, book=book).exists()
     
         if already_read:
+            serializer.instance = already_read
             return
         
         serializer.save(user = self.request.user, book = book)
             
             
-class ReadBooksDelete(generics.DestroyAPIView):
+class ReadBooksDelete(generics.RetrieveUpdateDestroyAPIView):
     serializer_class = ReadBooksSerializer
     permission_classes = [IsAuthenticated]
+    http_method_names = ["get", "patch", "delete"]
 
     def get_queryset(self):
         user = self.request.user
-        return ReadBooks.objects.filter(user = user)
+        return ReadBooks.objects.filter(user=user)
+
+    def perform_update(self, serializer):
+        # Only rating/review are ever editable via this endpoint
+        serializer.save(
+            rating=self.request.data.get("rating", serializer.instance.rating),
+            review=self.request.data.get("review", serializer.instance.review),
+        )
 
 
 @api_view(['POST'])
@@ -367,81 +447,62 @@ class ReadBooksDelete(generics.DestroyAPIView):
 def get_readbooks_recommendation_view(request):
 
     posts = request.data.get("readbooks", [])
-    titles = [item.get("title") for item in posts]
-    ratings = [item.get("rating") for item in posts]
 
-    selected_idx = [
-        data_store.indices_title[normalize_title(title)]
-        for title in titles
-        if normalize_title(title) in data_store.indices_title
+    selected = [
+        (data_store.id_to_idx[item.get("book_id")], item.get("rating"), item.get("book_id"))
+        for item in posts
+        if item.get("book_id") in data_store.id_to_idx
     ]
-    
-    if not selected_idx:
+
+    if not selected:
         return Response(
             {"Recommendations": []}
         )
 
-    weights = np.array(ratings)
+    selected_idx = [idx for idx, _rating, _bid in selected]
+    seed_weights = [rating for _idx, rating, _bid in selected]
+    selected_bids = [bid for _idx, _rating, bid in selected if _rating >= 3]
 
-    user_vector = np.average(
-        data_store.vectorized_matrix[selected_idx].toarray(),
-        axis=0,
-        weights=weights,
-    ).reshape(1, -1)
+    # Extract required genre sets from the seed books
+    seed_books = Book.objects.filter(id__in=selected_bids)
+    required_genre_sets = []
+    for sb in seed_books:
+        genres = {normalize_title(g.strip()) for g in (sb.genre or "").split(",") if g.strip()}
+        if genres:
+            required_genre_sets.append(genres)
 
-    sim_score = cosine_similarity(user_vector, data_store.vectorized_matrix)[0]
+    sim_score = recommender.similarity_from_seeds(selected_idx, seed_ratings=seed_weights)
     sim_score[selected_idx] = -1
-    sim_idx = np.argsort(sim_score)[::-1][:100]
+    sim_idx = np.argsort(sim_score)[::-1][:10000]
 
-    seen = set()
-    books = []
-
-    for idx in sim_idx:
-
-        book = data_store.combined_df.iloc[idx]
-
-        key = clean_title(book["title"])
-
-        if key in seen:
-            continue
-
-        seen.add(key)
-
-        books.append({
-            "title": book["title"],
-            "author": book["author"],
-            "description": book["description"],
-            "isbn": book["isbn"]
-        })
-
-        if len(books) == 8:
-            break
+    books = _books_from_positions(sim_idx, required_genre_sets=required_genre_sets)
 
     with ThreadPoolExecutor(max_workers=10) as executor:
         response_list = list(
             executor.map(
                 lambda book: get_book_detail(
-                    book["title"],
-                    book["author"],
-                    book["description"],
-                    book["isbn"]
-                ),
+                    book.id, 
+                    book.title, 
+                    book.author, 
+                    book.description,
+                    book.genre,
+                    book.img,
+                    book.link,
+                    ),
                 books,
             )
         )
 
-    wishlist_isbns = set(
-        Wishlist.objects.filter(user = request.user)
-        .values_list("book__isbn", flat=True)
+    wishlist_ids = set(
+        Wishlist.objects.filter(user = request.user).values_list("book_id", flat=True)
     )
-    read_isbns = set(
-        ReadBooks.objects.filter(user = request.user)
-        .values_list("book__isbn", flat=True)
+    read_ids = set(
+        ReadBooks.objects.filter(user = request.user).values_list("book_id", flat=True)
     )
 
     for book in response_list:
-        book["is_wishlisted"] = book["isbn"] in wishlist_isbns
-        book["is_read"] = book["isbn"] in read_isbns
+        book["is_wishlisted"] = book["book_id"] in wishlist_ids
+        book["is_read"] = book["book_id"] in read_ids
 
     return Response({"Recommendations": response_list})
 
@@ -464,10 +525,13 @@ class WishlistListCreate(generics.ListCreateAPIView):
                 executor.map(
                     lambda wishlist: {
                         **get_book_detail(
+                            wishlist.book.id,
                             wishlist.book.title,
                             wishlist.book.author,
                             wishlist.book.description,
-                            wishlist.book.isbn,
+                            wishlist.book.genre,
+                            wishlist.book.img,
+                            wishlist.book.link,
                         ),
                         "wishlist_id": wishlist.id,
                     },
@@ -478,8 +542,8 @@ class WishlistListCreate(generics.ListCreateAPIView):
         return Response({"Wishlists": response_list})
         
     def perform_create(self, serializer):
-        isbn = self.request.data["isbn"]
-        book = Book.objects.get(isbn = isbn)
+        book_id = self.request.data["book_id"]
+        book = Book.objects.get(id = book_id)
 
         book_count = Wishlist.objects.filter(user = self.request.user).count()
 
@@ -492,6 +556,7 @@ class WishlistListCreate(generics.ListCreateAPIView):
         already_wishlist = Wishlist.objects.filter(user=self.request.user, book=book).exists()
     
         if already_wishlist:
+            serializer.instance = already_wishlist
             return
         
         serializer.save(user = self.request.user, book = book)
@@ -511,73 +576,59 @@ class WishlistDelete(generics.DestroyAPIView):
 def get_wishlist_recommendation_view(request):
 
     posts = request.data.get("wishlists", [])
-    titles = (item.get("title") for item in posts)
+    book_ids = [item.get("book_id") for item in posts]
 
     selected_idx = [
-        data_store.indices_title[normalize_title(title)]
-        for title in titles
-        if normalize_title(title) in data_store.indices_title
+        data_store.id_to_idx[bid]
+        for bid in book_ids
+        if bid in data_store.id_to_idx
     ]
     
     if not selected_idx:
         return Response(
             {"Recommendations": []}
         )
-    
-    user_vector = np.asarray(data_store.vectorized_matrix[selected_idx].mean(axis=0))
-    sim_score = cosine_similarity(user_vector, data_store.vectorized_matrix)[0]
+
+    # Extract required genre sets from the seed books
+    seed_books = Book.objects.filter(id__in=book_ids)
+    required_genre_sets = []
+    for sb in seed_books:
+        genres = {normalize_title(g.strip()) for g in (sb.genre or "").split(",") if g.strip()}
+        if genres:
+            required_genre_sets.append(genres)
+
+    sim_score = recommender.similarity_from_seeds(selected_idx)
     sim_score[selected_idx] = -1
-    sim_idx = np.argsort(sim_score)[::-1][:100]
+    sim_idx = np.argsort(sim_score)[::-1][:10000]
 
-    seen = set()
-    books = []
-
-    for idx in sim_idx:
-
-        book = data_store.combined_df.iloc[idx]
-
-        key = clean_title(book["title"])
-
-        if key in seen:
-            continue
-
-        seen.add(key)
-
-        books.append({
-            "title": book["title"],
-            "author": book["author"],
-            "description": book["description"],
-            "isbn": book["isbn"]
-        })
-
-        if len(books) == 8:
-            break
+    books = _books_from_positions(sim_idx, required_genre_sets=required_genre_sets)
 
     with ThreadPoolExecutor(max_workers=10) as executor:
         response_list = list(
             executor.map(
                 lambda book: get_book_detail(
-                    book["title"],
-                    book["author"],
-                    book["description"],
-                    book["isbn"]
-                ),
+                    book.id, 
+                    book.title, 
+                    book.author, 
+                    book.description,
+                    book.genre,
+                    book.img,
+                    book.link,
+                    ),
                 books,
             )
         )
 
-    wishlist_isbns = set(
-        Wishlist.objects.filter(user = request.user)
-        .values_list("book__isbn", flat=True)
+    wishlist_ids = set(
+        Wishlist.objects.filter(user = request.user).values_list("book_id", flat=True)
     )
-    read_isbns = set(
-        ReadBooks.objects.filter(user = request.user)
-        .values_list("book__isbn", flat=True)
+    read_ids = set(
+        ReadBooks.objects.filter(user = request.user).values_list("book_id", flat=True)
     )
 
     for book in response_list:
-        book["is_wishlisted"] = book["isbn"] in wishlist_isbns
-        book["is_read"] = book["isbn"] in read_isbns
+        book["is_wishlisted"] = book["book_id"] in wishlist_ids
+        book["is_read"] = book["book_id"] in read_ids
 
     return Response({"Recommendations": response_list})
 
@@ -590,16 +641,20 @@ def me(request):
     readbooks_count = ReadBooks.objects.filter(user = user).count()
     id = user.id
     username = user.username
+    email = user.email
     return Response({
         "id": id,
         "username": username,
+        "email": email,
         "wishlists_count": wishlists_count,
         "readbooks_count": readbooks_count,
+        "is_staff": user.is_staff,
+        "is_superuser": user.is_superuser,
     })
 
 
 @api_view(['GET'])
-@permission_classes([AllowAny])
+@permission_classes([IsAuthenticated])
 def get_discover_books_view(request):
     cache_key = f"discover_books:{request.user.id}"
     cached = cache.get(cache_key)
@@ -607,56 +662,37 @@ def get_discover_books_view(request):
     if cached is not None:
         response_list = cached
     else:
-        seen = set()
-        books = []
-
-        random_idx = random.sample(range(len(data_store.combined_df)), 50)
-
-        for idx in random_idx:
-            book = data_store.combined_df.iloc[idx]
-            key = clean_title(book["title"])
-
-            if key in seen:
-                continue
-
-            seen.add(key)
-            books.append({
-                "title": book["title"],
-                "author": book["author"],
-                "description": book["description"],
-                "isbn": book["isbn"],
-            })
-
-            if len(books) == 8:
-                break
+        random_idx = random.sample(range(len(data_store.book_ids)), 500)
+        books = _books_from_positions(random_idx)
 
         with ThreadPoolExecutor(max_workers=10) as executor:
             response_list = list(
                 executor.map(
                     lambda book: get_book_detail(
-                        book["title"],
-                        book["author"],
-                        book["description"],
-                        book["isbn"]
-                    ),
+                        book.id, 
+                        book.title, 
+                        book.author, 
+                        book.description,
+                        book.genre,
+                        book.img,
+                        book.link,
+                        ),
                     books,
                 )
             )
 
         cache.set(cache_key, response_list, timeout=3600)
 
-    wishlist_isbns = set(
-        Wishlist.objects.filter(user=request.user)
-        .values_list("book__isbn", flat=True)
+    wishlist_ids = set(
+        Wishlist.objects.filter(user=request.user).values_list("book_id", flat=True)
     )
-    read_isbns = set(
-        ReadBooks.objects.filter(user=request.user)
-        .values_list("book__isbn", flat=True)
+    read_ids = set(
+        ReadBooks.objects.filter(user=request.user).values_list("book_id", flat=True)
     )
 
     for book in response_list:
-        book["is_wishlisted"] = book["isbn"] in wishlist_isbns
-        book["is_read"] = book["isbn"] in read_isbns
+        book["is_wishlisted"] = book["book_id"] in wishlist_ids
+        book["is_read"] = book["book_id"] in read_ids
 
     return Response({"Discover_Something_New": response_list})
 
@@ -676,47 +712,70 @@ def get_discover_books_view(request):
 @api_view(["GET", "POST"])
 @permission_classes([IsAdminUser])
 def admin_books_resource(request):
-    """Handles listing all books (paginated/limited) and adding a new book."""
+    """Handles searchable/paginated book listing and adding a new book."""
     if request.method == "GET":
-        # Grab recent 50 books to prevent heavy loading on the dashboard list
-        books = Book.objects.all().order_by("-id")[:50].values("id", "isbn", "title")
-        return JsonResponse({"status": "success", "books": list(books)}, status=200)
+        query = request.query_params.get("q", "").strip()
+
+        try:
+            page = max(1, int(request.query_params.get("page", 1)))
+        except ValueError:
+            page = 1
+        try:
+            page_size = min(100, max(1, int(request.query_params.get("page_size", 20))))
+        except ValueError:
+            page_size = 20
+
+        books_qs = Book.objects.all().order_by("-id")
+        if query:
+            books_qs = books_qs.filter(
+                Q(title__icontains=query) | Q(author__icontains=query)
+            )
+
+        total = books_qs.count()
+        start = (page - 1) * page_size
+        books = list(
+            books_qs[start:start + page_size].values(
+                "id", "title", "author", "genre", "description", "img", "link"
+            )
+        )
+        return JsonResponse(
+            {"status": "success", "books": books, "total": total, "page": page, "page_size": page_size},
+            status=200,
+        )
 
     elif request.method == "POST":
         try:
             data = json.loads(request.body)
-            isbn = data.get("isbn", "").strip()
             title = data.get("title", "").strip()
+            author = data.get("author", "").strip()
 
-            if not isbn or not title:
-                return JsonResponse(
-                    {
-                        "status": "error",
-                        "message": "ISBN and Title are required fields.",
-                    },
-                    status=400,
-                )
+            if not title:
+                return JsonResponse({"status": "error", "message": "Title is a required field."}, status=400)
+            if not author:
+                return JsonResponse({"status": "error", "message": "Author is a required field."}, status=400)
 
-            if Book.objects.filter(isbn=isbn).exists():
-                return JsonResponse(
-                    {
-                        "status": "error",
-                        "message": "A book with this ISBN already exists.",
-                    },
-                    status=400,
-                )
-
-            new_book = Book.objects.create(isbn=isbn, title=title)
+            new_book = Book.objects.create(
+                title=title,
+                author=author,
+                genre=data.get("genre", "").strip(),
+                description=data.get("description", "").strip(),
+                img=data.get("img", "").strip(),
+                link=data.get("link", "").strip(),
+            )
             return JsonResponse(
                 {
                     "status": "success",
                     "message": "Book added successfully!",
-                    "book": {"id": new_book.id, "title": new_book.title},
+                    "book": {
+                        "id": new_book.id, "title": new_book.title, "author": new_book.author,
+                        "genre": new_book.genre, "description": new_book.description,
+                        "img": new_book.img, "link": new_book.link,
+                    },
                 },
                 status=201,
             )
         except Exception as e:
-            return JsonResponse({"status": "error", "message": str(e)}, status=500)
+            return JsonResponse({"status": "error", "message": str(e)}, status=10000)
 
 
 @api_view(["PUT", "DELETE"])
@@ -733,13 +792,22 @@ def admin_book_detail(request, book_id):
     if request.method == "PUT":
         try:
             data = json.loads(request.body)
-            book.title = data.get("title", book.title).strip()
-            book.isbn = data.get("isbn", book.isbn).strip()
+            title = data.get("title", book.title).strip()
+            author = data.get("author", book.author).strip()
+
+            if not title:
+                return JsonResponse({"status": "error", "message": "Title is a required field."}, status=400)
+            if not author:
+                return JsonResponse({"status": "error", "message": "Author is a required field."}, status=400)
+
+            book.title = title
+            book.author = author
+            book.genre = data.get("genre", book.genre).strip()
+            book.description = data.get("description", book.description).strip()
+            book.img = data.get("img", book.img).strip()
+            book.link = data.get("link", book.link).strip()
             book.save()
-            return JsonResponse(
-                {"status": "success", "message": "Book updated successfully!"},
-                status=200,
-            )
+            return JsonResponse({"status": "success", "message": "Book updated successfully!"}, status=200)
         except Exception as e:
             return JsonResponse({"status": "error", "message": str(e)}, status=500)
 
@@ -758,11 +826,35 @@ def admin_book_detail(request, book_id):
 @api_view(["GET"])
 @permission_classes([IsAdminUser])
 def admin_get_all_users(request):
-    """Retrieves all registered platform users."""
-    users = User.objects.all().values(
-        "id", "username", "email", "is_superuser", "date_joined"
+    """Retrieves registered platform users, with search + pagination."""
+    query = request.query_params.get("q", "").strip()
+
+    try:
+        page = max(1, int(request.query_params.get("page", 1)))
+    except ValueError:
+        page = 1
+    try:
+        page_size = min(100, max(1, int(request.query_params.get("page_size", 20))))
+    except ValueError:
+        page_size = 20
+
+    users_qs = User.objects.all().order_by("-date_joined")
+    if query:
+        users_qs = users_qs.filter(
+            Q(username__icontains=query) | Q(email__icontains=query)
+        )
+
+    total = users_qs.count()
+    start = (page - 1) * page_size
+    users = list(
+        users_qs[start:start + page_size].values(
+            "id", "username", "email", "is_superuser", "is_staff", "date_joined"
+        )
     )
-    return JsonResponse({"status": "success", "users": list(users)}, status=200)
+    return JsonResponse(
+        {"status": "success", "users": users, "total": total, "page": page, "page_size": page_size},
+        status=200,
+    )
 
 
 @api_view(["DELETE"])
@@ -789,3 +881,41 @@ def admin_delete_user(request, user_id):
         return JsonResponse(
             {"status": "error", "message": "User not found."}, status=404
         )
+
+    
+class IsSuperUser(BasePermission):
+    def has_permission(self, request, view):
+        return bool(request.user and request.user.is_authenticated and request.user.is_superuser)
+
+
+@api_view(["PATCH"])
+@permission_classes([IsSuperUser])
+def admin_toggle_staff(request, user_id):
+    """Grants or revokes staff access (i.e. /manage/backend access)."""
+    try:
+        target_user = User.objects.get(id=user_id)
+
+        if target_user == request.user:
+            return JsonResponse(
+                {"status": "error", "message": "You cannot change your own staff status."},
+                status=400,
+            )
+        if target_user.is_superuser:
+            return JsonResponse(
+                {"status": "error", "message": "Superuser staff status cannot be changed here."},
+                status=400,
+            )
+
+        target_user.is_staff = not target_user.is_staff
+        target_user.save(update_fields=["is_staff"])
+
+        return JsonResponse(
+            {
+                "status": "success",
+                "message": f"Staff access {'granted' if target_user.is_staff else 'revoked'}.",
+                "is_staff": target_user.is_staff,
+            },
+            status=200,
+        )
+    except User.DoesNotExist:
+        return JsonResponse({"status": "error", "message": "User not found."}, status=404)

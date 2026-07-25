@@ -5,4 +5,4 @@ class RecommenderConfig(AppConfig):
     name = 'recommender'
 
     def ready(self):
-        import recommender.signals
+        from . import signals

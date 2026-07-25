@@ -19,7 +19,7 @@ function Home() {
           <p className="home-tagline">Recommends books, not recipes - still nails your taste.</p>
 
           <p className="home-subtext">
-            Find any book by title or ISBN, get recommendations tuned to your
+            Find any book by title, get recommendations tuned to your
             taste, and keep a wishlist and reading history that grows smarter
             with every book you search, save, or finish.
           </p>
@@ -52,7 +52,7 @@ function Home() {
           <div className="mock-card">
             <div className="mock-search">
               <i className="fa-solid fa-magnifying-glass"></i>
-              <span>The Alchemist</span>
+              <span>Muna Madan</span>
             </div>
             <div className="mock-tile">
               <div className="mock-cover"></div>
@@ -81,8 +81,8 @@ function Home() {
         <div className="home-feature-grid">
           <div className="feature-card">
             <i className="fa-solid fa-magnifying-glass"></i>
-            <h3>Search Two Ways</h3>
-            <p>Look up any title, or paste an ISBN for a pinpoint match.</p>
+            <h3>Search by Title</h3>
+            <p>Look up any title for an instant match.</p>
           </div>
 
           <div className="feature-card">
@@ -130,7 +130,7 @@ function Home() {
           <div className="step-card">
             <span className="step-number">2</span>
             <h3>Search or browse</h3>
-            <p>Find a title, paste an ISBN, or just explore what's discovered for you.</p>
+            <p>Find a title, or just explore what's discovered for you.</p>
           </div>
           <div className="step-card">
             <span className="step-number">3</span>

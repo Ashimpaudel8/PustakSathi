@@ -63,6 +63,7 @@
         width: 200px;
         overflow: hidden;
         z-index: 600;
+        width: fit-content;
     }
 
     .bottom-nav-sheet-username {

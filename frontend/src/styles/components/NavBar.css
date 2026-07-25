@@ -91,9 +91,10 @@
 
 .logout-div {
     background: white;
-    display: flex;
+    /* display: flex;
     justify-content: center;
-    align-items: center;
+    align-items: center; */
+    padding-left: 2px;
 }
 
 .logout-div:hover {

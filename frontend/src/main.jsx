@@ -10,6 +10,10 @@ import "./styles/variables.css";
 import "./styles/utilities.css";
 import "./styles/responsive.css";
 
+if (typeof window !== "undefined" && "scrollRestoration" in window.history) {
+  window.history.scrollRestoration = "manual";
+}
+
 createRoot(document.getElementById('root')).render(
   <StrictMode>
     <BrowserRouter>

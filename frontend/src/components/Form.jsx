@@ -9,6 +9,7 @@ import { useTheme } from "../context/ThemeContext";
 
 function Form({ route, method }) {
   const [username, setUsername] = useState("")
+  const [email, setEmail] = useState("")
   const [password, setPassword] = useState("")
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState("")
@@ -23,7 +24,7 @@ function Form({ route, method }) {
     setLoading(true);
 
     try {
-      const res = await api.post(route, { username, password })
+      const res = await api.post(route, { username, email, password })
       if (method === "login") {
         await login(res.data);
         navigate("/dashboard");
@@ -63,6 +64,9 @@ function Form({ route, method }) {
                 {error.username && <p>{`Username Error: ${error.username}`}</p>}
               </div>
               <div>
+                {error.email && <p>{`Email Error: ${error.email}`}</p>}
+              </div>
+              <div>
                 {error.password && <p>{`Password Error: ${error.password}`}</p>}
               </div>
             </div>}
@@ -79,6 +83,22 @@ function Form({ route, method }) {
                 onChange={(e) => setUsername(e.target.value)}
               />
             </div>
+            {method === "login" ?
+              null
+              :
+              <div>
+                <label className="flex-column label-auth">Email</label>
+                <input
+                  className="input-auth"
+                  type="email"
+                  disabled={loading}
+                  placeholder="Enter your email"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                />
+              </div>
+            }
+
             <div className="password-container">
               <label className="flex-column label-auth">Password</label>
               <input

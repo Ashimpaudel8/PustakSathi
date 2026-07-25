@@ -101,7 +101,7 @@ function Wishlist() {
             <div className="wishlist-book-grid">
               {wishlist.map((book) => (
                 <BookTile
-                  key={book.isbn}
+                  key={book.book_id}
                   book={book}
                   action1={
                     <div className="wishlist-btn-container">

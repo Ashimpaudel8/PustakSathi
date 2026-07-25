@@ -54,6 +54,9 @@ function BottomNav() {
             <div className="bottom-nav-sheet-username">
               <i className="fa-solid fa-user"></i> {user?.username}
             </div>
+            <div className="bottom-nav-sheet-username">
+              <i class="fa-solid fa-at"></i> {user?.email}
+            </div>
             <button className="bottom-nav-sheet-item" onClick={toggleTheme}>
               {theme === "light" ? (
                 <><i className="fa-solid fa-moon"></i> Dark Mode</>

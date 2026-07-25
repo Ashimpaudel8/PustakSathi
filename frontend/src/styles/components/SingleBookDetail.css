@@ -69,3 +69,25 @@
   gap: 10px;
   margin-bottom: 12px;
 }
+
+.link-visit-btn {
+    border: 1.5px solid rgb(51, 153, 150);
+    width: 75px;
+    font-size: 14px;
+    font-family: inherit;
+    font-size: 500;
+    border-radius: 15px;
+    cursor: pointer;
+    padding: 8px 12px;
+    color: white;
+    background: linear-gradient(45deg, rgb(23, 90, 58), rgb(17, 255, 0));
+    transition: transform 0.15s ease, box-shadow 0.15s ease, filter 0.15s ease;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+
+.link-visit-btn:hover {
+    transform: translateY(1px);
+    box-shadow: 0 2px 4px rgba(18, 252, 100, 0.35);
+}

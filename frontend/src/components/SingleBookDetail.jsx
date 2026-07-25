@@ -23,7 +23,7 @@ function SingleBookDetail({ book, setSingleBook }) {
   const handleWishlist = (e) => {
     e.preventDefault();
     api
-      .post("/api/wishlist/", { isbn: book.isbn })
+      .post("/api/wishlist/", { book_id: book.book_id })
       .then((res) => {
         setCachedWishlist((prev) => [...prev, { ...book, wishlist_id: res.data.id }]);
         setSingleBook((prev) => ({ ...prev, is_wishlisted: true }));
@@ -39,7 +39,7 @@ function SingleBookDetail({ book, setSingleBook }) {
 
   const handleRatingSubmit = ({ rating, review }) => {
     api
-      .post("/api/readbooks/", { isbn: ratingModalBook.isbn, rating, review })
+      .post("/api/readbooks/", { book_id: ratingModalBook.book_id, rating, review })
       .then((res) => {
         setCachedReadBooks((prev) => [
           ...prev,
@@ -80,6 +80,15 @@ function SingleBookDetail({ book, setSingleBook }) {
 
       <div className="singlebook-metadata">
         <div className="singlebook-buttons-container">
+          {book.link && (
+            <button
+              className="link-visit-btn"
+              onClick={() => window.open(book.link, "_blank", "noopener,noreferrer")}
+            >
+              <i className="fa-solid fa-arrow-up-right-from-square"></i>
+              Visit
+            </button>
+          )}
           {book.is_read ? (
             <button className="markedasread-btn" title="Mark as Read" disabled={true}>
               <i className="fa-solid fa-book-bookmark"></i>
@@ -105,11 +114,28 @@ function SingleBookDetail({ book, setSingleBook }) {
         </div>
 
         <p className="title">{book.title}</p>
-        <p className="isbn">ISBN : {book.isbn}</p>
-        <p className="detail">Authors : {book.authors.join(", ")}</p>
-        <p className="detail">Publisher : {book.publisher}</p>
-        <p className="detail">Published Date : {book.publishedDate}</p>
-        <p className="detail">Categories : {book.categories.join(", ")}</p>
+        <p className="detail">
+          Author(s):{" "}
+          {book.authors.length > 1
+            ? [...new Set(book.authors)].slice(0, 10).join(", ")
+            : [...new Set(book.authors[0].split(","))].slice(0, 10).join(", ")}
+          {(
+            book.authors.length > 1
+              ? [...new Set(book.authors)].length
+              : [...new Set(book.authors[0].split(","))].length
+          ) > 10 && ", ..."}
+        </p>
+        <p className="detail">
+          Genre(s):{" "}
+          {book.categories.length > 1
+            ? [...new Set(book.categories)].slice(0, 8).join(", ")
+            : [...new Set(book.categories[0].split(","))].slice(0, 8).join(", ")}
+          {(
+            book.categories.length > 1
+              ? [...new Set(book.categories)].length
+              : [...new Set(book.categories[0].split(","))].length
+          ) > 8 && ", ..."}
+        </p>
         <hr />
         <p className="description">Description</p>
         <p className="description-text">{book.description}</p>

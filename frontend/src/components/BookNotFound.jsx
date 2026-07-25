@@ -18,7 +18,6 @@ const BookNotFound = ({ search = "" }) => {
         <ul className="bnf-suggestions">
           <li>Double-check the spelling of the title or author's name.</li>
           <li>Try using fewer or more general keywords.</li>
-          <li>Search by ISBN for an exact match.</li>
         </ul>
       </div>
     </div>

@@ -10,6 +10,7 @@ import ReadBooks from "./pages/ReadBooks";
 import Wishlist from "./pages/Wishlist";
 import ManageBackend from "./pages/ManageBackend";
 import NavBar from "./components/NavBar";
+import ScrollRestoration from "./components/ScrollRestoration";
 import DashboardLayout from "./layouts/DashboardLayout";
 import { useLocation } from "react-router-dom";
 import Footer from "./components/Footer";
@@ -44,6 +45,7 @@ function AppFooter() {
 function App() {
   return (
     <>
+      <ScrollRestoration />
       <NavBar />
       <Routes>
         <Route path="/" element={<Home />} />
@@ -78,9 +80,8 @@ function App() {
           />
         </Route>
 
-
-        {/* 🛠️ Custom Admin Workspace Route */}
-        <Route path="/manage/backend" element={<ManageBackend />} />
+        <Route path="/backend" element={<ManageBackend />} />
+        <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
       <AppFooter />
     </>

@@ -60,9 +60,6 @@ function SearchBar({
 
   const { usePersistedState } = usePageState();
   const [books, setBooks] = useState([]);
-  const [searchBy, setSearchBy] = usePersistedState("dashboard.searchBy", "q");
-
-  const showSuggestions = searchBy === "q";
 
   const handleChange = (e) => {
     setSearch(e.target.value);
@@ -84,23 +81,18 @@ function SearchBar({
   const isFirstRender = useRef(true);
 
   const fetchSuggestions = () => {
-    if (searchBy !== "q" || search.trim() === "") {
+    if (search.trim() === "") {
       setBooks([]);
       return;
     }
 
     api
-      .get("/api/books/search/", { params: { [searchBy]: search } })
+      .get("/api/books/search/", { params: { q: search } })
       .then((res) => setBooks(res.data))
       .catch((err) => console.error(err));
   };
 
   useEffect(() => {
-    if (searchBy !== "q") {
-      setBooks([]);
-      return;
-    }
-
     if (isFirstRender.current) {
       isFirstRender.current = false;
       return;
@@ -114,7 +106,7 @@ function SearchBar({
     const timer = setTimeout(fetchSuggestions, 500);
 
     return () => clearTimeout(timer);
-  }, [search, searchBy]);
+  }, [search]);
 
   const handleSearchClick = async (e) => {
     e.preventDefault();
@@ -128,7 +120,7 @@ function SearchBar({
       setIsDiscover(false);
       setIsError(false);
       const res = await api.get("/api/books/recommend/", {
-        params: { [searchBy]: search },
+        params: { q: search },
       });
       console.log(res.data.error);
       if (res.data.error) {
@@ -195,11 +187,7 @@ function SearchBar({
           ref={inputRef}
           type="text"
           value={search}
-          placeholder={
-            searchBy === "q"
-              ? "Prince of Ayodhya (The Ramayana, Book I)"
-              : "0446530921"
-          }
+          placeholder="Muna Madan"
           onChange={handleChange}
           onFocus={fetchSuggestions}
           onKeyDown={(e) => {
@@ -210,7 +198,7 @@ function SearchBar({
         />
 
         {
-          showSuggestions && books.length > 0 && (
+          books.length > 0 && (
             <div className="search-suggestions">
               {books.map((book) => (
                 <div
@@ -245,19 +233,6 @@ function SearchBar({
       >
         <i className="fa-solid fa-magnifying-glass"></i>
       </button>
-
-      <select
-        className="search-type-select"
-        value={searchBy}
-        onChange={(e) => {
-          setSearchBy(e.target.value);
-          setSearch("");
-          setBooks([]);
-        }}
-      >
-        <option value="q">{isMobile ? "Title" : "Search by Title"}</option>
-        <option value="i">{isMobile ? "ISBN" : "Search by ISBN"}</option>
-      </select>
     </div>
   );
 }

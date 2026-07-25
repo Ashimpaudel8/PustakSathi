@@ -39,7 +39,6 @@ function RecommendationLoader({ initialLoading }) {
       <div className="spinner"></div>
       <h3>{title}</h3>
       {initialLoading && (<p>{message}</p>)}
-      <p>{seconds}</p>
     </div>
   );
 }

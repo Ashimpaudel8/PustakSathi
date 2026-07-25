@@ -12,28 +12,22 @@ https://docs.djangoproject.com/en/5.2/ref/settings/
 
 from pathlib import Path
 from datetime import timedelta
+import os
+import dj_database_url
 from dotenv import load_dotenv
-load_dotenv()
 
-# Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
 
+load_dotenv(BASE_DIR / ".env")
 
-# Quick-start development settings - unsuitable for production
-# See https://docs.djangoproject.com/en/5.2/howto/deployment/checklist/
+SECRET_KEY = os.environ.get("DJANGO_SECRET_KEY")
 
-# SECURITY WARNING: keep the secret key used in production secret!
-import os
-SECRET_KEY = os.environ.get('DJANGO_SECRET_KEY')
+DEBUG = os.getenv("DEBUG", "True") == "True"
 
-# SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
-
-ALLOWED_HOSTS = [
-    "127.0.0.1",
-    "localhost",
-    "192.168.1.69",   # replace with your PC's IP
-]
+ALLOWED_HOSTS = os.getenv(
+    "ALLOWED_HOSTS",
+    "127.0.0.1,localhost"
+).split(",")
 
 REST_FRAMEWORK = {
     "DEFAULT_AUTHENTICATION_CLASSES": (
@@ -68,6 +62,7 @@ INSTALLED_APPS = [
 MIDDLEWARE = [
     'corsheaders.middleware.CorsMiddleware',
     'django.middleware.security.SecurityMiddleware',
+    "whitenoise.middleware.WhiteNoiseMiddleware",
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
@@ -75,6 +70,17 @@ MIDDLEWARE = [
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
 ]
+
+STATIC_URL = "/static/"
+
+STATIC_ROOT = BASE_DIR / "staticfiles"
+
+
+STORAGES = {
+    "staticfiles": {
+        "BACKEND": "whitenoise.storage.CompressedManifestStaticFilesStorage",
+    },
+}
 
 ROOT_URLCONF = 'backend.urls'
 
@@ -99,12 +105,23 @@ WSGI_APPLICATION = 'backend.wsgi.application'
 # Database
 # https://docs.djangoproject.com/en/5.2/ref/settings/#databases
 
-DATABASES = {
-    'default': {
-        'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': BASE_DIR / 'db.sqlite3',
+DATABASE_URL = os.getenv("DATABASE_URL")
+
+if DATABASE_URL:
+    DATABASES = {
+        "default": dj_database_url.parse(
+            DATABASE_URL,
+            conn_max_age=600,
+            ssl_require=True,
+        )
     }
-}
+else:
+    DATABASES = {
+        "default": {
+            "ENGINE": "django.db.backends.sqlite3",
+            "NAME": BASE_DIR / "db.sqlite3",
+        }
+    }
 
 #cache
 CACHES = {
@@ -161,4 +178,7 @@ CORS_ALLOWED_ORIGINS = [
     "http://localhost:3000",
     "http://192.168.1.69:5173",
 ]
+
 CORS_ALLOW_CREDENTIALS = True
+
+HF_OFFLINE_MODE = False

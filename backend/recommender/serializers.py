@@ -2,12 +2,21 @@ from django.contrib.auth.models import User
 from rest_framework import serializers
 import re
 from .models import Book, ReadBooks, Wishlist
+from rest_framework.validators import UniqueValidator
 
 class UserSerializer(serializers.ModelSerializer):
+    email = serializers.EmailField(
+        required=True,
+        validators=[
+            UniqueValidator(queryset=User.objects.all())
+        ],
+    )
     class Meta:
         model = User
-        fields = ["id", "username", "password"]
-        extra_kwargs = {"password": {"write_only": True}}
+        fields = ["id", "username", "email", "password"]
+        extra_kwargs = {
+            "password": {"write_only": True},
+        }
 
     def validate_password(self, value):
         if len(value) < 8:
@@ -44,7 +53,15 @@ class UserSerializer(serializers.ModelSerializer):
 class BookSerializer(serializers.ModelSerializer):
     class Meta:
         model = Book
-        fields = ["id", "isbn", "title"]
+        fields = [
+            "id",
+            "title",
+            "author",
+            "genre",
+            "description",
+            "img",
+            "link",
+        ]
 
 class ReadBooksSerializer(serializers.ModelSerializer):
     class Meta:

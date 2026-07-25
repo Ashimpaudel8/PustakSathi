@@ -80,6 +80,7 @@ const NavBar = () => {
                 className={`dropdown-menu ${theme === "dark" ? "dark-theme" : ""}`}
               >
                 <div className="content-dropdown">{`Username: ${user.username}`}</div>
+                <div className="content-dropdown">{`Email: ${user.email ? user.email : "N/A"}`}</div>
                 <div className="logout-div">
                   <button
                     role="menuitem"

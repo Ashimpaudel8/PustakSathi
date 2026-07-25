@@ -30,7 +30,7 @@ function RecommendedList({
   const handleWishlist = (e, book) => {
     e.preventDefault();
     api
-      .post("/api/wishlist/", { isbn: book.isbn })
+      .post("/api/wishlist/", { book_id: book.book_id })
       .then((res) => {
         const newWishlistEntry = { ...book, wishlist_id: res.data.id };
         if (setwishlist) {
@@ -40,7 +40,7 @@ function RecommendedList({
         }
         setRecommendations((prev) =>
           prev.map((b) =>
-            b.isbn === book.isbn ? { ...b, is_wishlisted: true } : b,
+            b.book_id === book.book_id ? { ...b, is_wishlisted: true } : b,
           ),
         );
         fetchUser();
@@ -57,7 +57,7 @@ function RecommendedList({
   const handleRatingSubmit = ({ rating, review }) => {
     api
       .post("/api/readbooks/", {
-        isbn: ratingModalBook.isbn,
+        book_id: ratingModalBook.book_id,
         rating,
         review,
       })
@@ -76,7 +76,7 @@ function RecommendedList({
         }
         setRecommendations((prev) =>
           prev.map((book) =>
-            book.isbn === ratingModalBook.isbn
+            book.book_id === ratingModalBook.book_id
               ? { ...book, is_read: true }
               : book,
           ),
@@ -97,7 +97,7 @@ function RecommendedList({
       <div className="book-grid">
         {recommendations.map((book) => (
           <BookTile
-            key={book.isbn}
+            key={book.book_id}
             book={book}
             action1={
               book.is_read ? (

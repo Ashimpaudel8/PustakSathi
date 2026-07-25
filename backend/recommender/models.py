@@ -3,25 +3,41 @@ from django.contrib.auth.models import User
 from django.core.validators import MinValueValidator, MaxValueValidator, RegexValidator, MinLengthValidator
 
 class Book(models.Model):
-    
-    isbn = models.CharField(
-        max_length=13,
+    title = models.CharField(
+        max_length=500,
         unique=True,
-        validators=[
-            MinLengthValidator(10, message="ISBN must be min 10 digits."),
-            RegexValidator(
-                regex=r'^\d+$',
-                message="ISBN must contain digits only."
-            )
-        ]
-        )
-    title = models.CharField(max_length=500)
-    author = models.CharField(max_length=200)
-    description = models.TextField(
-        validators=[
-            MinLengthValidator(20, message="Description must be at least 20 characters long.")
-        ]
     )
+
+    author = models.CharField(
+        max_length=500,
+        default="",
+    )
+
+    description = models.TextField(
+        blank=True,
+        default="",
+    )
+
+    genre = models.CharField(
+        max_length=300,
+        blank=True,
+        default="",
+    )
+
+    img = models.URLField(
+        blank=True,
+        default="",
+    )
+
+    link = models.URLField(
+        blank=True,
+        default="",
+    )
+
+    class Meta:
+        indexes = [
+            models.Index(fields=["title"]),
+        ]
 
     def __str__(self):
         return self.title

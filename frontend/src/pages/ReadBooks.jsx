@@ -5,6 +5,7 @@ import RecommendedList from "../components/RecommendedList";
 import { useAuth } from "../context/AuthContext";
 import { usePageState } from "../context/PageStateContext";
 import RecommendationLoader from "../components/RecommendationLoader";
+import RatingModal from "../components/RatingModal";
 import "../styles/pages/ReadBooks.css"
 
 function ReadBooks() {
@@ -17,6 +18,29 @@ function ReadBooks() {
   const [isLoading, setIsLoading] = useState(null);
   const { fetchUser } = useAuth();
   const loadingRef = useRef(null);
+
+  const [editModalBook, setEditModalBook] = useState(null);
+
+  const handleEdit = (e, book) => {
+    e.preventDefault();
+    setEditModalBook(book);
+  };
+
+  const handleEditSubmit = ({ rating, review }) => {
+    api
+      .patch(`/api/readbooks/delete/${editModalBook.readbook_id}/`, { rating, review })
+      .then((res) => {
+        setReadBooks((prev) =>
+          prev.map((b) =>
+            b.readbook_id === editModalBook.readbook_id
+              ? { ...b, rating: res.data.rating, review: res.data.review }
+              : b
+          )
+        );
+      })
+      .catch((err) => console.log("Error encountered:", err));
+    setEditModalBook(null);
+  };
 
   useEffect(() => {
     if (isRecommending && loadingRef.current) {
@@ -99,7 +123,7 @@ function ReadBooks() {
               {readBooks.map((book) => {
                 return (
                   <BookTile
-                    key={book.isbn}
+                    key={book.book_id}
                     book={book}
                     action1={
                       <div className="readbooks-btn-container">
@@ -111,6 +135,15 @@ function ReadBooks() {
                           Delete
                         </button>
                       </div>
+                    }
+                    action2={
+                      <button
+                        onClick={(e) => handleEdit(e, book)}
+                        className="editreadbooks-btn"
+                      >
+                        <i className="fa-solid fa-pen"></i>
+                        Edit
+                      </button>
                     }
                   />
                 );
@@ -131,7 +164,18 @@ function ReadBooks() {
           recommendations={recommendations}
           setreadbooks={setReadBooks}
           setRecommendations={setRecommendations}
-        />}
+        />
+      }
+      {editModalBook && (
+        <RatingModal
+          book={editModalBook}
+          mode="edit"
+          initialRating={editModalBook.rating}
+          initialReview={editModalBook.review}
+          onSubmit={handleEditSubmit}
+          onCancel={() => setEditModalBook(null)}
+        />
+      )}
     </div>
   );
 }
