@@ -1,7 +1,7 @@
 import React, { useEffect, useState, useCallback } from "react";
 import { useTheme } from "../context/ThemeContext";
 
-const API_BASE = "http://127.0.0.1:8000/api/admin-panel";
+const API_BASE = `${import.meta.env.VITE_API_URL}/api/admin-panel`;
 const PAGE_SIZE = 20;
 const USER_PAGE_SIZE = 20;
 
