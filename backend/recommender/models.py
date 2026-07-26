@@ -4,12 +4,10 @@ from django.core.validators import MinValueValidator, MaxValueValidator, RegexVa
 
 class Book(models.Model):
     title = models.CharField(
-        max_length=500,
         unique=True,
     )
 
     author = models.CharField(
-        max_length=500,
         default="",
     )
 
