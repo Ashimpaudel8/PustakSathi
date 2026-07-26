@@ -54,7 +54,7 @@ class ReadBookView(generics.ListAPIView):
         )
 
 
-CACHE_TIMEOUT_HIT = 60 * 60    # 1 hour — successful lookups (found thumbnail)
+CACHE_TIMEOUT_HIT = 60 * 60    # 1 hour — successful lookups
 CACHE_TIMEOUT_MISS = 60 * 5    # 5 minutes — nothing found, retry sooner
 
 
@@ -130,7 +130,6 @@ def _fetch_book_detail_fresh(title, author, description, genre, img, link):
             continue
 
         try:
-            print(author)
             response_google = requests.get(
                 "https://www.googleapis.com/books/v1/volumes",
                 params={
@@ -210,9 +209,7 @@ def _books_from_positions(positions, limit=24, max_per_author=6, max_per_genre=1
     result = []
     fallback_books = []
     
-    # Track which seed genre sets still need to be fulfilled
     unsatisfied_sets = list(required_genre_sets) if required_genre_sets else []
-    print(unsatisfied_sets)
 
     for bid in ids_in_order:
         book = books_by_id.get(bid)
@@ -247,7 +244,6 @@ def _books_from_positions(positions, limit=24, max_per_author=6, max_per_genre=1
         if slots_left / 5 <= len(unsatisfied_sets) and not satisfies:
             fallback_books.append(book)
             continue
-        # -----------------------------
 
         seen_titles.add(key)
         
@@ -265,7 +261,6 @@ def _books_from_positions(positions, limit=24, max_per_author=6, max_per_genre=1
         if len(result) == limit:
             break
             
-    # Fill any remaining slots with highly-ranked books we had to skip
     if len(result) < limit:
         for book in fallback_books:
             key = clean_title(book.title)
@@ -463,7 +458,6 @@ def get_readbooks_recommendation_view(request):
     seed_weights = [rating for _idx, rating, _bid in selected]
     selected_bids = [bid for _idx, _rating, bid in selected if _rating >= 3]
 
-    # Extract required genre sets from the seed books
     seed_books = Book.objects.filter(id__in=selected_bids)
     required_genre_sets = []
     for sb in seed_books:
@@ -589,7 +583,6 @@ def get_wishlist_recommendation_view(request):
             {"Recommendations": []}
         )
 
-    # Extract required genre sets from the seed books
     seed_books = Book.objects.filter(id__in=book_ids)
     required_genre_sets = []
     for sb in seed_books:

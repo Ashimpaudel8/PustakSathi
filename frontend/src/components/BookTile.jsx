@@ -3,9 +3,6 @@ import "../styles/components/BookTile.css"
 import defaultBookCover from "../assets/cover-not-available.png";
 
 function BookTile({ book, action1, action2 }) {
-  console.log(book.categories);
-  console.log(typeof book.categories);
-  console.log(Array.isArray(book.categories));
   const navigate = useNavigate();
 
   const handleOpen = () => {
@@ -39,7 +36,7 @@ function BookTile({ book, action1, action2 }) {
             loading="lazy"
             decoding="async"
             onError={(e) => {
-              e.target.onerror = null; // prevent infinite loop
+              e.target.onerror = null;
               e.target.src = defaultBookCover;
             }}
           />

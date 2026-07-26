@@ -56,7 +56,7 @@ function Wishlist() {
   };
 
   useEffect(() => {
-    if (hasFetchedWishlist) return; // already loaded once this session
+    if (hasFetchedWishlist) return;
     fetchWishlist();
   }, []);
 

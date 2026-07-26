@@ -4,8 +4,8 @@ import pickle
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 PKL_DIR = os.path.join(BASE_DIR, "pickle_models")
 
-book_ids = None     # list[int] -- book_ids[i] is the Book.id for row i
-id_to_idx = None    # {book_id: i} -- reverse lookup, built fresh on each load
+book_ids = None
+id_to_idx = None
 title_emb = None
 title_mask = None
 desc_emb = None

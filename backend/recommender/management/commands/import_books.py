@@ -1,38 +1,29 @@
 import csv
-from pathlib import Path
-BASE_DIR = Path(__file__).resolve().parents[3]
-csv_path = BASE_DIR / "data" / "books_meta.csv"
-
 from django.core.management.base import BaseCommand
 from recommender.models import Book
 from recommender.recommender import rebuild_recommendation_data
+from recommender.recommender import get_csv_path   # wherever you put get_csv_path above
 
 class Command(BaseCommand):
     help = "Import books from csv"
 
     def handle(self, *args, **options):
-        url = Path(csv_path)
+        csv_path = get_csv_path()
+        self.stdout.write(f"Importing from: {csv_path}")
 
-        with open(url, newline="", encoding="utf-8-sig") as f:
+        with open(csv_path, newline="", encoding="utf-8-sig") as f:
             reader = csv.DictReader(f)
-
-            books = []
-
+            batch = []
             for row in reader:
-                books.append(
-                    Book(
-                        title=row["title"],
-                        author=row["author"],
-                        description=row["description"],
-                        genre=row["genre"],
-                        img=row["img"],
-                        link=row["link"],
-                    )
-                )
+                batch.append(Book(
+                    title=row["title"], author=row["author"], description=row["description"],
+                    genre=row["genre"], img=row["img"], link=row["link"],
+                ))
+                if len(batch) >= 1000:
+                    Book.objects.bulk_create(batch, ignore_conflicts=True)
+                    batch.clear()          # <-- free each batch instead of holding all 50,995 at once
+            if batch:
+                Book.objects.bulk_create(batch, ignore_conflicts=True)
 
-            Book.objects.bulk_create(books, batch_size=1000, ignore_conflicts=True)
-
-        # Builds the embedding pickles straight from books_meta.csv (title,
-        # description, genre, author)
         rebuild_recommendation_data()
         self.stdout.write(self.style.SUCCESS("Books imported successfully & pickle files regenerated!"))

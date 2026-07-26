@@ -1,26 +1,39 @@
-"""
-Recommendation engine (embedding-based, DB-backed)
-===================================================
-
-Book metadata (title/author/genre/description) ALWAYS comes straight from
-the DB via the Book model -- never cached in a DataFrame. Only the
-expensive part (embeddings) is cached to disk, as plain arrays aligned to
-book_ids: book_ids[i] is the Book.id for embedding row i.
-"""
-
 import os
 import pickle
 import numpy as np
 from sklearn.metrics.pairwise import cosine_similarity
-from sentence_transformers import SentenceTransformer
-
+from sklearn.feature_extraction.text import HashingVectorizer, TfidfTransformer
+from django.conf import settings
+import scipy.sparse as sp
 from . import data_store
+from pathlib import Path
 
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 PKL_DIR = os.path.join(BASE_DIR, "pickle_models")
 os.makedirs(PKL_DIR, exist_ok=True)
 
+BASE_DIR = Path(__file__).resolve().parents[1]
+
+def get_csv_path():
+    embedding_model = getattr(settings, "RECOMMENDER_EMBEDDING_MODEL", "e5")
+    filename = "books_meta_tfidf.csv" if embedding_model == "tfidf" else "books_meta_e5.csv"
+    return BASE_DIR / "data" / filename
+
 MODEL_NAME = "intfloat/multilingual-e5-small"
+
+# "e5" or "tfidf" -- set via settings.py -> RECOMMENDER_EMBEDDING_MODEL
+EMBEDDING_MODEL = getattr(settings, "RECOMMENDER_EMBEDDING_MODEL", "e5")
+print(f"[DEBUG] EMBEDDING_MODEL = {EMBEDDING_MODEL}")
+
+
+# Caps vocabulary size per column so the sparse matrix stays small and
+# predictable regardless of corpus size. Rare/one-off words beyond this
+# rank add noise more than signal anyway.
+TFIDF_N_FEATURES = {
+    "title": 2**13,        # 8,192
+    "description": 2**15,  # 32,768
+    "genre": 2**11,        # 2,048
+}
 
 WEIGHTS = {
     "title": 0.25,
@@ -29,21 +42,29 @@ WEIGHTS = {
     "author": 0.05,
 }
 
-from django.conf import settings
-
 if getattr(settings, "HF_OFFLINE_MODE", True):
     os.environ["HF_HUB_OFFLINE"] = "1"
     os.environ["TRANSFORMERS_OFFLINE"] = "1"
 
 _model = None
 
+def hashed_transform_chunked(hasher, texts, chunk_size=5000):
+    chunks = []
+    for i in range(0, len(texts), chunk_size):
+        chunks.append(hasher.transform(texts[i:i + chunk_size]))
+    return sp.vstack(chunks).tocsr()
+
 
 def get_model():
+    """Only called from embed_column() when EMBEDDING_MODEL == 'e5'.
+    The import is INSIDE this function on purpose -- torch/sentence-
+    transformers never get loaded into memory at all when running in
+    tfidf mode."""
     global _model
     if _model is None:
+        from sentence_transformers import SentenceTransformer
         _model = SentenceTransformer(
             MODEL_NAME,
-            # device="cpu",
             local_files_only=getattr(settings, "HF_OFFLINE_MODE", True))
     return _model
 
@@ -55,14 +76,34 @@ def parse_authors(author_str):
     return names if names else None
 
 
-def embed_column(model, values):
-    """values: plain list[str] pulled straight from the DB (no DataFrame)."""
+def embed_column(values, column_name, vectorizer=None):
     clean = ["" if v is None else str(v).strip() for v in values]
     mask = np.array([v != "" for v in clean])
+
+    if EMBEDDING_MODEL == "tfidf":
+        n_features = TFIDF_N_FEATURES[column_name]
+        hasher = HashingVectorizer(
+            n_features=n_features,
+            alternate_sign=False,  # keep values non-negative for tfidf-style weighting
+            norm=None,             # TfidfTransformer normalizes afterward
+        )
+        counts = hashed_transform_chunked(hasher, clean)   # fixed-width sparse matrix, no vocabulary dict built
+
+        if vectorizer is None:
+            vectorizer = TfidfTransformer()
+            embeddings = vectorizer.fit_transform(counts)
+        else:
+            embeddings = vectorizer.transform(counts)
+
+        embeddings = embeddings.multiply(mask.reshape(-1, 1)).tocsr()
+        return embeddings, mask, vectorizer
+
+    # --- e5 path (unchanged) ---
+    model = get_model()
     texts = ["query: " + t for t in clean]
     embeddings = model.encode(texts, batch_size=64, show_progress_bar=True, normalize_embeddings=True)
     embeddings[~mask] = 0.0
-    return embeddings, mask
+    return embeddings, mask, None
 
 
 PKL_FILES = {
@@ -74,6 +115,10 @@ PKL_FILES = {
     "genre_emb": "genre_emb.pkl",
     "genre_mask": "genre_mask.pkl",
     "author_sets": "author_sets.pkl",
+    # only ever written/read in tfidf mode:
+    "title_vectorizer": "title_vectorizer.pkl",
+    "desc_vectorizer": "desc_vectorizer.pkl",
+    "genre_vectorizer": "genre_vectorizer.pkl",
 }
 
 
@@ -93,38 +138,45 @@ def _load(name):
 
 
 def rebuild_recommendation_data():
-    """Full rebuild from the DB. Book metadata is read once here just to
-    build the embeddings, then thrown away -- only book_ids + embeddings
-    get cached to disk."""
     from .models import Book
+
 
     rows = list(Book.objects.all().values("id", "title", "author", "description", "genre"))
     if not rows:
         return
 
-    model = get_model()
     book_ids = [r["id"] for r in rows]
-    title_emb, title_mask = embed_column(model, [r["title"] for r in rows])
-    desc_emb, desc_mask = embed_column(model, [r["description"] for r in rows])
-    genre_emb, genre_mask = embed_column(model, [r["genre"] for r in rows])
+    title_emb, title_mask, title_vec = embed_column([r["title"] for r in rows], "title")
+
+    desc_emb, desc_mask, desc_vec = embed_column([r["description"] for r in rows], "description")
+
+    genre_emb, genre_mask, genre_vec = embed_column([r["genre"] for r in rows], "genre")
+
     author_sets = [parse_authors(r["author"]) for r in rows]
 
-    _save(
+    to_save = dict(
         book_ids=book_ids,
         title_emb=title_emb, title_mask=title_mask,
         desc_emb=desc_emb, desc_mask=desc_mask,
         genre_emb=genre_emb, genre_mask=genre_mask,
         author_sets=author_sets,
     )
+    if EMBEDDING_MODEL == "tfidf":
+        to_save.update(title_vectorizer=title_vec, desc_vectorizer=desc_vec, genre_vectorizer=genre_vec)
+
+    _save(**to_save)
+
     data_store.load_data()
 
 
-import pandas as pd
-import numpy as np
-
 def sync_new_books():
-    """Embeds ONLY books whose id isn't in book_ids.pkl yet, then appends --
-    never re-embeds books that are already indexed."""
+    """e5: embeds ONLY the new books and appends them -- never re-embeds
+    books that are already indexed.
+    tfidf: vocabulary depends on the whole corpus, so a new book can
+    introduce new words -- simplest correct option is a full rebuild."""
+    if EMBEDDING_MODEL == "tfidf":
+        return rebuild_recommendation_data()
+
     from .models import Book
 
     try:
@@ -132,7 +184,6 @@ def sync_new_books():
     except FileNotFoundError:
         return rebuild_recommendation_data()
 
-    # 1. Compare IDs in Python memory (0 SQL parameters used)
     indexed_set = set(book_ids)
     db_ids = set(Book.objects.values_list("id", flat=True))
     missing_ids = list(db_ids - indexed_set)
@@ -140,7 +191,6 @@ def sync_new_books():
     if not missing_ids:
         return
 
-    # 2. Fetch missing rows in safe 500-ID chunks to avoid SQLite limits
     new_rows = []
     CHUNK_SIZE = 500
     for i in range(0, len(missing_ids), CHUNK_SIZE):
@@ -152,18 +202,9 @@ def sync_new_books():
         )
         new_rows.extend(rows)
 
-    model = get_model()
-
-    # Wrapped in pd.Series so embed_column()'s .fillna() method works cleanly
-    new_title_emb, new_title_mask = embed_column(
-        model, pd.Series([r["title"] for r in new_rows])
-    )
-    new_desc_emb, new_desc_mask = embed_column(
-        model, pd.Series([r["description"] for r in new_rows])
-    )
-    new_genre_emb, new_genre_mask = embed_column(
-        model, pd.Series([r["genre"] for r in new_rows])
-    )
+    new_title_emb, new_title_mask, _ = embed_column([r["title"] for r in new_rows], "title")
+    new_desc_emb, new_desc_mask, _ = embed_column([r["description"] for r in new_rows], "description")
+    new_genre_emb, new_genre_mask, _ = embed_column([r["genre"] for r in new_rows], "genre")
     new_author_sets = [parse_authors(r["author"]) for r in new_rows]
 
     title_emb, title_mask = _load("title_emb"), _load("title_mask")
@@ -192,10 +233,16 @@ def sync_new_books():
     )
     data_store.load_data()
 
+
 def update_existing_books(ids_to_update):
-    """Re-embeds books that are ALREADY indexed (rename/edit case).
-    Overwrites their rows in place at the same position -- never appends,
-    never touches other books' embeddings."""
+    """e5: re-embeds books that are ALREADY indexed (rename/edit case),
+    overwriting their rows in place -- never appends, never touches other
+    books' embeddings.
+    tfidf: an edit can introduce new vocabulary, so re-transforming with the
+    old vectorizer could silently drop new words -- full rebuild instead."""
+    if EMBEDDING_MODEL == "tfidf":
+        return rebuild_recommendation_data()
+
     from .models import Book
 
     ids_to_update = [i for i in ids_to_update if i is not None]
@@ -210,7 +257,7 @@ def update_existing_books(ids_to_update):
     id_to_idx = {bid: i for i, bid in enumerate(book_ids)}
     targets = [bid for bid in ids_to_update if bid in id_to_idx]
     if not targets:
-        return  # not indexed yet -- let sync_new_books handle it
+        return
 
     rows = list(
         Book.objects.filter(id__in=targets).values(
@@ -220,10 +267,9 @@ def update_existing_books(ids_to_update):
     if not rows:
         return
 
-    model = get_model()
-    new_title_emb, new_title_mask = embed_column(model, [r["title"] for r in rows])
-    new_desc_emb, new_desc_mask = embed_column(model, [r["description"] for r in rows])
-    new_genre_emb, new_genre_mask = embed_column(model, [r["genre"] for r in rows])
+    new_title_emb, new_title_mask, _ = embed_column([r["title"] for r in rows], "title")
+    new_desc_emb, new_desc_mask, _ = embed_column([r["description"] for r in rows], "description")
+    new_genre_emb, new_genre_mask, _ = embed_column([r["genre"] for r in rows], "genre")
     new_author_sets = [parse_authors(r["author"]) for r in rows]
 
     title_emb, title_mask = _load("title_emb"), _load("title_mask")
@@ -247,10 +293,11 @@ def update_existing_books(ids_to_update):
     )
     data_store.load_data()
 
+
 def remove_books_from_index(ids_to_remove):
     """Removes books from ALL cached arrays in place, keeping book_ids and
     every embedding matrix aligned. Safe to call with ids that were never
-    indexed (they're just skipped)."""
+    indexed (they're just skipped). Unaffected by embedding model choice."""
     ids_to_remove = set(i for i in ids_to_remove if i is not None)
     if not ids_to_remove:
         return
@@ -258,11 +305,11 @@ def remove_books_from_index(ids_to_remove):
     try:
         book_ids = _load("book_ids")
     except FileNotFoundError:
-        return  # nothing indexed yet
+        return
 
     keep_mask = np.array([bid not in ids_to_remove for bid in book_ids])
     if keep_mask.all():
-        return  # none of these were indexed
+        return
 
     book_ids = [bid for bid, keep in zip(book_ids, keep_mask) if keep]
     title_emb = _load("title_emb")[keep_mask]
@@ -283,14 +330,6 @@ def remove_books_from_index(ids_to_remove):
     data_store.load_data()
 
 
-
-# ---------------- similarity (dynamic weight redistribution) ----------------
-# NOTE: seed_idx / seed_idxs below are POSITIONS in book_ids (0..n-1), not
-# Book primary keys. views.py converts book_id -> position via
-# data_store.id_to_idx before calling these, and position -> book_id via
-# data_store.book_ids[pos] afterwards.
-
-# instead of raw Jaccard (0 or 1 for single-author books), compress it:
 def _jaccard(a, b):
     if not a or not b:
         return None
@@ -299,7 +338,8 @@ def _jaccard(a, b):
     if union == 0:
         return None
     j = inter / union
-    return j ** 0.5 if j == 1.0 else j  # optional: soften only perfect matches
+    return j ** 0.5 if j == 1.0 else j
+
 
 def rating_to_weight(rating, min_weight=0.5, max_weight=1.0):
     rating = max(1, min(5, rating))
@@ -359,7 +399,7 @@ def similarity_from_seeds(seed_idxs, seed_ratings=None):
         weights = np.array([rating_to_weight(r) for r in seed_ratings])
 
     if np.allclose(weights, 0):
-        weights = np.ones(len(seed_idxs))  # fallback: no signal, treat equally
+        weights = np.ones(len(seed_idxs))
 
     for idx, w in zip(seed_idxs, weights):
         total += w * weighted_similarity(idx)

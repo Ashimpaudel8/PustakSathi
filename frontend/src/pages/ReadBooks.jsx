@@ -97,7 +97,7 @@ function ReadBooks() {
           setIsReadBooksCollapsed(true);
         })
         .finally(() => setIsRecommending(false));
-    }, 2000); // Wait 1 second before calling the API
+    }, 2000);
 
     return () => clearTimeout(handler);
   };

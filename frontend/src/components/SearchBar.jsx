@@ -70,7 +70,6 @@ function SearchBar({
     setTimeout(() => inputRef.current?.focus(), 50);
   };
 
-  // Clears the input field and drops suggestions instantly
   const handleClearSearch = () => {
     setSearch("");
     setBooks([]);
@@ -122,7 +121,6 @@ function SearchBar({
       const res = await api.get("/api/books/recommend/", {
         params: { q: search },
       });
-      console.log(res.data.error);
       if (res.data.error) {
         setRecommendations([]);
         setIsError(true);

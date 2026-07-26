@@ -9,7 +9,7 @@ function Home() {
 
   return (
     <div className={`home-page ${theme === "dark" ? "dark-theme" : ""}`}>
-      {/* ================= HERO ================= */}
+      
       <section className="home-hero">
         <div className="home-hero-text">
           <span className="home-eyebrow">Search &bull; Recommend &bull; Read</span>
@@ -74,7 +74,7 @@ function Home() {
         </div>
       </section>
 
-      {/* ================= FEATURES ================= */}
+      
       <section className="home-features">
         <h2 className="home-section-title">Everything you need to find your next read</h2>
 
@@ -117,7 +117,7 @@ function Home() {
         </div>
       </section>
 
-      {/* ================= HOW IT WORKS ================= */}
+      
       <section className="home-steps">
         <h2 className="home-section-title">Get going in three steps</h2>
 
@@ -140,7 +140,7 @@ function Home() {
         </div>
       </section>
 
-      {/* ================= FINAL CTA ================= */}
+      
       {!isAuthenticated && (
         <section className="home-final-cta">
           <h2>Ready to find your next book?</h2>

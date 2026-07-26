@@ -173,12 +173,13 @@ STATIC_URL = 'static/'
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
-CORS_ALLOWED_ORIGINS = [
-    "http://localhost:5173",
-    "http://localhost:3000",
-    "http://192.168.1.69:5173",
-]
+CORS_ALLOWED_ORIGINS = os.getenv(
+    "CORS_ALLOWED_ORIGINS",
+    "http://localhost:5173,http://localhost:3000,http://192.168.1.69:5173"
+).split(",")
 
 CORS_ALLOW_CREDENTIALS = True
 
 HF_OFFLINE_MODE = False
+
+RECOMMENDER_EMBEDDING_MODEL = "tfidf"  # "e5" or "tfidf"

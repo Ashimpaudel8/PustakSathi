@@ -48,7 +48,6 @@ function RecommendedList({
       .catch((error) => {
         const data = error.response?.data
         if (data.code === "WISHLISTS_LIMIT_REACHED") {
-          console.log(data.message);
           setLimitReached(true)
         }
       });
@@ -62,7 +61,6 @@ function RecommendedList({
         review,
       })
       .then((res) => {
-        console.log(res.data);
         const newReadBookEntry = {
           ...ratingModalBook,
           readbook_id: res.data.id,
@@ -85,7 +83,6 @@ function RecommendedList({
       }).catch((error) => {
         const data = error.response?.data
         if (data.code === "READBOOKS_LIMIT_REACHED") {
-          console.log(data.message);
           setLimitReached(true)
         }
       });
