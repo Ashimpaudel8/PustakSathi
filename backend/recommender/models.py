@@ -10,8 +10,8 @@ class Book(models.Model):
         unique=True,
     )
 
-    author = models.CharField(
-        max_length=1000,
+    author = models.TextField(
+        blank=True,
         default="",
     )
 
@@ -20,21 +20,20 @@ class Book(models.Model):
         default="",
     )
 
-    genre = models.CharField(
-        max_length=1000,
+    # Changed to TextField: No max limit
+    genre = models.TextField(
         blank=True,
         default="",
     )
 
-    # Increased URLField max_length from the default 200 to 1000 to prevent the crash
-    img = models.URLField(
-        max_length=1000,
+    # Changed to TextField: No max limit
+    img = models.TextField(
         blank=True,
         default="",
     )
 
-    link = models.URLField(
-        max_length=1000,
+    # Changed to TextField: No max limit
+    link = models.TextField(
         blank=True,
         default="",
     )
