@@ -7,10 +7,12 @@ import api from "../api";
 import { usePageState } from "../context/PageStateContext";
 import RecommendationLoader from "../components/RecommendationLoader";
 import BookNotFound from "../components/BookNotFound";
-import "../styles/pages/Dashboard.css"
+import "../styles/pages/Dashboard.css";
 
 function buildViewKey(isDiscover, singleBook, recommendations, isError, search) {
-  const bookIds = recommendations.map((b) => b.book_id).join(",");
+  // Safe fallback to [] if recommendations is undefined
+  const bookList = Array.isArray(recommendations) ? recommendations : [];
+  const bookIds = bookList.map((b) => b.book_id).join(",");
   const errorPart = isError ? `err:${search}` : "";
   return `${isDiscover ? "discover" : "search"}::${singleBook?.book_id ?? ""}::${bookIds}::${errorPart}`;
 }
@@ -33,11 +35,11 @@ function Dashboard() {
   const [isError, setIsError] = useState(false);
 
   const prevBookIdsRef = useRef("");
-
-
   const currentViewKeyRef = useRef(null);
-
   const isRestoringRef = useRef(false);
+
+  // Safe fallback list for array checks
+  const safeRecommendations = Array.isArray(recommendations) ? recommendations : [];
 
   useEffect(() => {
     if (navigationType !== "POP") return;
@@ -48,13 +50,13 @@ function Dashboard() {
     currentViewKeyRef.current = buildViewKey(
       snapshot.isDiscover,
       snapshot.singleBook,
-      snapshot.recommendations,
+      snapshot.recommendations || [],
       snapshot.isError,
       snapshot.search
     );
 
     setIsDiscover(snapshot.isDiscover);
-    setRecommendations(snapshot.recommendations);
+    setRecommendations(snapshot.recommendations || []);
     setSingleBook(snapshot.singleBook);
     setSearch(snapshot.search ?? "");
     setIsError(snapshot.isError ?? false);
@@ -70,8 +72,8 @@ function Dashboard() {
       return;
     }
 
-    const viewKey = buildViewKey(isDiscover, singleBook, recommendations, isError, search);
-    const snapshot = { isDiscover, recommendations, singleBook, search, isError };
+    const viewKey = buildViewKey(isDiscover, singleBook, safeRecommendations, isError, search);
+    const snapshot = { isDiscover, recommendations: safeRecommendations, singleBook, search, isError };
 
     const isFirstSettle = currentViewKeyRef.current === null;
     const sameView = viewKey === currentViewKeyRef.current;
@@ -89,11 +91,12 @@ function Dashboard() {
   useEffect(() => {
     if (isRecommending || isLoading) return;
 
-    const currentBookIds = recommendations.map((b) => b.book_id).join(",");
+    const currentBookIds = safeRecommendations.map((b) => b.book_id).join(",");
     const isNewList = currentBookIds !== prevBookIdsRef.current;
     prevBookIdsRef.current = currentBookIds;
 
-    if (isNewList && recommendations.length > 0) {
+    // Safe length check using safeRecommendations
+    if (isNewList && safeRecommendations.length > 0) {
       window.scrollTo({
         top: 0,
         behavior: "smooth",
@@ -112,23 +115,24 @@ function Dashboard() {
 
   useEffect(() => {
     if (initialOpenTitle.current) return;
-    if (recommendations.length > 0) return;
+    if (safeRecommendations.length > 0) return;
 
     const fetchBook = async () => {
       setIsLoading(true);
       try {
         const res = await api.get("/api/discover/");
-        setRecommendations(res.data.Discover_Something_New);
-      }
-      catch (err) {
+        // Safely fall back to [] if Discover_Something_New is missing
+        setRecommendations(res.data?.Discover_Something_New || []);
+      } catch (err) {
         console.error(err);
+        setRecommendations([]);
       } finally {
         setIsLoading(false);
       }
     };
 
     fetchBook();
-  }, [])
+  }, []);
 
   useEffect(() => {
     if (!openTitle) return;
@@ -144,10 +148,12 @@ function Dashboard() {
         });
 
         setIsDiscover(false);
-        setRecommendations(res.data.Recommendations);
-        setSingleBook(res.data.single_book_detail);
+        // Safely fall back to [] if Recommendations is missing
+        setRecommendations(res.data?.Recommendations || []);
+        setSingleBook(res.data?.single_book_detail || null);
       } catch (err) {
         console.error(err);
+        setRecommendations([]);
       } finally {
         setIsRecommending(false);
       }
@@ -170,34 +176,30 @@ function Dashboard() {
         />
       </div>
       <div className="dashboard-content-div">
-        {singleBook &&
+        {singleBook && (
           <SingleBookDetail book={singleBook} setSingleBook={setSingleBook} />
-        }
-        {
-          isDiscover ? (
-            <h1>Discover Something New :</h1>
-          ) : (
-            <h1>Recommendations :</h1>
-          )
-        }
-        {
-          isError ? (
-            <BookNotFound search={search} />
-          ) : isRecommending ? (
-            <div ref={loadingRef}>
-              <RecommendationLoader initialLoading={true} />
-            </div>
-          ) : isLoading ? (
-            <div>
-              <RecommendationLoader />
-            </div>
-          ) : (
-            <RecommendedList
-              recommendations={recommendations}
-              setRecommendations={setRecommendations}
-            />
-          )
-        }
+        )}
+        {isDiscover ? (
+          <h1>Discover Something New :</h1>
+        ) : (
+          <h1>Recommendations :</h1>
+        )}
+        {isError ? (
+          <BookNotFound search={search} />
+        ) : isRecommending ? (
+          <div ref={loadingRef}>
+            <RecommendationLoader initialLoading={true} />
+          </div>
+        ) : isLoading ? (
+          <div>
+            <RecommendationLoader />
+          </div>
+        ) : (
+          <RecommendedList
+            recommendations={safeRecommendations}
+            setRecommendations={setRecommendations}
+          />
+        )}
       </div>
     </>
   );

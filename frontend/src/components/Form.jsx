@@ -105,6 +105,7 @@ function Form({ route, method }) {
                 className="input-auth"
                 type={showPassword ? "text" : "password"}
                 disabled={loading}
+                autoComplete="current-password"
                 placeholder={method === "login" ?
                   "Enter your password" :
                   "Create a new password"}
