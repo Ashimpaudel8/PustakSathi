@@ -10,7 +10,6 @@ import BookNotFound from "../components/BookNotFound";
 import "../styles/pages/Dashboard.css";
 
 function buildViewKey(isDiscover, singleBook, recommendations, isError, search) {
-  // Safe fallback to [] if recommendations is undefined
   const bookList = Array.isArray(recommendations) ? recommendations : [];
   const bookIds = bookList.map((b) => b.book_id).join(",");
   const errorPart = isError ? `err:${search}` : "";
@@ -19,7 +18,7 @@ function buildViewKey(isDiscover, singleBook, recommendations, isError, search) 
 
 function Dashboard() {
   const navigate = useNavigate();
-  const navigationType = useNavigationType(); // "PUSH" | "POP" | "REPLACE"
+  const navigationType = useNavigationType(); 
   const { usePersistedState } = usePageState();
   const [recommendations, setRecommendations] = usePersistedState("dashboard.recommendations", []);
   const [isDiscover, setIsDiscover] = usePersistedState("dashboard.isDiscover", true);
