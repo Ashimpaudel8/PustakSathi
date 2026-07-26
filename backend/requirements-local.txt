@@ -1,0 +1,13 @@
+# Local dev only -- adds the e5 embedding path on top of the Render base.
+# Install with: pip install -r requirements-local.txt
+-r requirements.txt
+
+sentence-transformers==5.6.0
+transformers==5.14.1
+torch
+torchaudio
+torchvision
+safetensors==0.8.0
+tokenizers==0.22.2
+huggingface-hub==1.24.0
+hf-xet==1.5.2
