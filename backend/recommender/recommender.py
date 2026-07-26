@@ -7,6 +7,16 @@ from django.conf import settings
 import scipy.sparse as sp
 from . import data_store
 from pathlib import Path
+import re
+import unicodedata
+
+try:
+    import nltk
+    from nltk.corpus import stopwords as nltk_stopwords
+    from nltk.stem import WordNetLemmatizer
+    _NLTK_AVAILABLE = True
+except ImportError:
+    _NLTK_AVAILABLE = False
 
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 PKL_DIR = os.path.join(BASE_DIR, "pickle_models")
@@ -21,14 +31,9 @@ def get_csv_path():
 
 MODEL_NAME = "intfloat/multilingual-e5-small"
 
-# "e5" or "tfidf" -- set via settings.py -> RECOMMENDER_EMBEDDING_MODEL
 EMBEDDING_MODEL = getattr(settings, "RECOMMENDER_EMBEDDING_MODEL", "e5")
-print(f"[DEBUG] EMBEDDING_MODEL = {EMBEDDING_MODEL}")
 
 
-# Caps vocabulary size per column so the sparse matrix stays small and
-# predictable regardless of corpus size. Rare/one-off words beyond this
-# rank add noise more than signal anyway.
 TFIDF_N_FEATURES = {
     "title": 2**13,        # 8,192
     "description": 2**15,  # 32,768
@@ -41,6 +46,86 @@ WEIGHTS = {
     "genre": 0.28,
     "author": 0.05,
 }
+
+_stopwords_en = None
+_lemmatizer = None
+_nltk_data_ready = False
+
+
+def _ensure_nltk_data():
+    global _nltk_data_ready
+    if _nltk_data_ready or not _NLTK_AVAILABLE:
+        return
+    for pkg, path in [("stopwords", "corpora/stopwords"), ("wordnet", "corpora/wordnet")]:
+        try:
+            nltk.data.find(path)
+        except LookupError:
+            try:
+                nltk.download(pkg, quiet=True)
+            except Exception:
+                pass  # offline / no network -- fall back gracefully below
+    _nltk_data_ready = True
+
+
+def _get_stopwords_en():
+    global _stopwords_en
+    if _stopwords_en is None:
+        _ensure_nltk_data()
+        try:
+            _stopwords_en = set(nltk_stopwords.words("english"))
+        except LookupError:
+            _stopwords_en = set()
+    return _stopwords_en
+
+
+def _get_lemmatizer():
+    global _lemmatizer
+    if _lemmatizer is None:
+        _ensure_nltk_data()
+        try:
+            lem = WordNetLemmatizer()
+            lem.lemmatize("test")  # forces a lookup, verifies wordnet data is present
+            _lemmatizer = lem
+        except LookupError:
+            _lemmatizer = False  # marks "checked, unavailable" so we don't retry every call
+    return _lemmatizer
+
+
+# high-frequency Devanagari function words / postpositions.
+NEPALI_STOPWORDS = {
+    "छ", "छन्", "थियो", "थिए", "हो", "हुन्", "गर्ने", "गरेको", "गर्दै",
+    "र", "तर", "पनि", "यो", "त्यो", "यस", "उस", "उनको", "उनले", "यसको",
+    "एक", "हुने", "भएको", "लागि", "साथ", "बारे", "जस्तो", "अनि", "भने",
+    "नै", "मा", "को", "का", "की", "ले", "लाई", "बाट", "देखि", "सम्म",
+    "जुन", "जो", "यी", "ती", "हुँदा", "गर्न", "छैन", "थिएन",
+}
+
+# \W excludes Devanagari punctuation/spaces too since re.UNICODE treats
+# Devanagari letters as \w -- so this tokenizes both scripts correctly.
+_TOKEN_RE = re.compile(r"[^\W\d_]+", re.UNICODE)
+
+
+def _preprocess_text(text):
+    if not text:
+        return text
+
+    text = unicodedata.normalize("NFC", text)
+    tokens = _TOKEN_RE.findall(text.lower())
+    if not tokens:
+        return ""
+
+    stop_en = _get_stopwords_en()
+    lemmatizer = _get_lemmatizer()
+
+    out = []
+    for tok in tokens:
+        if tok in stop_en or tok in NEPALI_STOPWORDS:
+            continue
+        if tok.isascii() and lemmatizer:
+            tok = lemmatizer.lemmatize(tok)
+        out.append(tok)
+
+    return " ".join(out)
 
 if getattr(settings, "HF_OFFLINE_MODE", True):
     os.environ["HF_HUB_OFFLINE"] = "1"
@@ -87,7 +172,8 @@ def embed_column(values, column_name, vectorizer=None):
             alternate_sign=False,  # keep values non-negative for tfidf-style weighting
             norm=None,             # TfidfTransformer normalizes afterward
         )
-        counts = hashed_transform_chunked(hasher, clean)   # fixed-width sparse matrix, no vocabulary dict built
+        processed = [_preprocess_text(v) for v in clean]
+        counts = hashed_transform_chunked(hasher, processed)  # fixed-width sparse matrix, no vocabulary dict built
 
         if vectorizer is None:
             vectorizer = TfidfTransformer()

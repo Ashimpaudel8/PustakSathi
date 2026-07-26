@@ -3,8 +3,6 @@ from django.contrib.auth.models import User
 from django.core.validators import MinValueValidator, MaxValueValidator, RegexValidator, MinLengthValidator
 
 class Book(models.Model):
-    # CharField requires a max_length. 500 is usually safe for book titles.
-    # If a title can be infinitely long, change this to models.TextField(unique=True)
     title = models.CharField(
         max_length=1000, 
         unique=True,
@@ -20,19 +18,16 @@ class Book(models.Model):
         default="",
     )
 
-    # Changed to TextField: No max limit
     genre = models.TextField(
         blank=True,
         default="",
     )
 
-    # Changed to TextField: No max limit
     img = models.TextField(
         blank=True,
         default="",
     )
 
-    # Changed to TextField: No max limit
     link = models.TextField(
         blank=True,
         default="",

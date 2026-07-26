@@ -32,12 +32,25 @@ const NavBar = () => {
     };
   }, []);
 
-  if (loading) return null;
-
   return (
     <nav className={`navbar flex ${hasBottomNavToggle ? "has-bottom-toggle" : ""}`}>
       <Link className="home-link" to="/"><img src={logo} alt="Logo" className="logo" /></Link>
-      {isAuthenticated ? (
+
+      {loading ? (
+        <div className="nav-container flex nav-loading-placeholder">
+          <button
+            className="theme-toggle-btn"
+            onClick={toggleTheme}
+            aria-label="Toggle dark mode"
+          >
+            {theme === "light" ? (
+              <i className="fa-solid fa-moon"></i>
+            ) : (
+              <i className="fa-solid fa-sun"></i>
+            )}
+          </button>
+        </div>
+      ) : isAuthenticated ? (
         <div className="nav-container flex">
           <span>Wishlists: {user.wishlists_count}</span>
           <span>Read Books: {user.readbooks_count}</span>
