@@ -1,10 +1,12 @@
 import React from 'react'
-import { NavLink } from 'react-router-dom'
+import { NavLink, useLocation } from 'react-router-dom'
 import { useState } from 'react';
 import "../styles/components/Sidebar.css"
 
 function SideBar() {
   const [collapsed, setCollapsed] = useState(false);
+  const location = useLocation();
+  const isOnDashboard = location.pathname === "/dashboard";
   return (
     <aside className={`sidebar ${collapsed ? "collapsed" : ""}`}>
       <button
@@ -15,7 +17,7 @@ function SideBar() {
       </button>
       <div className="side-link-container">
         <NavLink to="/dashboard"
-          state={{ resetToDiscover: true }}
+          state={isOnDashboard ? { resetToDiscover: true } : undefined}
           className={({ isActive }) =>
             isActive ? "side-link active" : "side-link"
           }>

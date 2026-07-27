@@ -1,4 +1,4 @@
-import { NavLink, useNavigate } from "react-router-dom";
+import { NavLink, useNavigate, useLocation } from "react-router-dom";
 import { useState, useRef, useEffect } from "react";
 import { useAuth } from "../context/AuthContext";
 import { useTheme } from "../context/ThemeContext";
@@ -9,6 +9,8 @@ function BottomNav() {
   const { user, logout } = useAuth();
   const { theme, toggleTheme } = useTheme();
   const navigate = useNavigate();
+  const location = useLocation();
+  const isOnDashboard = location.pathname === "/dashboard";
 
   const handleLogout = () => {
     setProfileOpen(false);
@@ -20,7 +22,7 @@ function BottomNav() {
     <nav className={`bottom-nav${profileOpen ? " profile-active" : ""}`}>
       <NavLink
         to="/dashboard"
-        state={{ resetToDiscover: true }}
+        state={isOnDashboard ? { resetToDiscover: true } : undefined}
         className={({ isActive }) => isActive ? "bottom-nav-link active" : "bottom-nav-link"}
       >
         <i className="fa-solid fa-magnifying-glass"></i>
