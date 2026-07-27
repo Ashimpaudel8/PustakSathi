@@ -115,7 +115,7 @@ def _fetch_book_detail_fresh(title, author, description, genre, img, link):
     }
 
     if data_dict["thumbnail_url"]:
-        return data_dict
+        return data_dict, False
 
     # ---------- Google Books ----------
     google_titles = list(dict.fromkeys([
