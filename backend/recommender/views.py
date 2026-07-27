@@ -199,9 +199,9 @@ def _fetch_book_detail_fresh(title, author, description, genre, img, link):
     return data_dict
 
 
-def _books_from_positions(positions, limit=24, max_per_author=6, max_per_genre=12, required_genre_sets=None):
+def _books_from_positions(positions, limit=8, max_per_author=8, max_per_genre=8, required_genre_sets=None):
     ids_in_order = [data_store.book_ids[p] for p in positions]
-    books_by_id = Book.objects.in_bulk(ids_in_order)
+    books_by_id = Book.objects.only("id", "title", "author", "genre").in_bulk(ids_in_order)
 
     seen_titles = set()
     author_counts = {}
@@ -327,11 +327,11 @@ def get_recommendation_view(request):
 
     sim_score = recommender.similarity_from_seeds(selected_idx)
     sim_score[selected_idx] = -1
-    sim_idx = np.argsort(sim_score)[::-1][:10000]
+    sim_idx = np.argsort(sim_score)[::-1][:100]
 
     books = _books_from_positions(sim_idx)
 
-    with ThreadPoolExecutor(max_workers=10) as executor:
+    with ThreadPoolExecutor(max_workers=2) as executor:
         response_list = list(
             executor.map(
                 lambda book: get_book_detail(
@@ -376,7 +376,7 @@ class ReadBooksListCreate(generics.ListCreateAPIView):
     def list(self, request, *args, **kwargs):
         readbooks = self.get_queryset()
 
-        with ThreadPoolExecutor(max_workers=10) as executor:
+        with ThreadPoolExecutor(max_workers=2) as executor:
             response_list = list(
                 executor.map(
                     lambda readbook: {
@@ -467,11 +467,11 @@ def get_readbooks_recommendation_view(request):
 
     sim_score = recommender.similarity_from_seeds(selected_idx, seed_ratings=seed_weights)
     sim_score[selected_idx] = -1
-    sim_idx = np.argsort(sim_score)[::-1][:10000]
+    sim_idx = np.argsort(sim_score)[::-1][:100]
 
     books = _books_from_positions(sim_idx, required_genre_sets=required_genre_sets)
 
-    with ThreadPoolExecutor(max_workers=10) as executor:
+    with ThreadPoolExecutor(max_workers=2) as executor:
         response_list = list(
             executor.map(
                 lambda book: get_book_detail(
@@ -514,7 +514,7 @@ class WishlistListCreate(generics.ListCreateAPIView):
     def list(self, request, *args, **kwargs):
         wishlists = self.get_queryset()
 
-        with ThreadPoolExecutor(max_workers=10) as executor:
+        with ThreadPoolExecutor(max_workers=2) as executor:
             response_list = list(
                 executor.map(
                     lambda wishlist: {
@@ -592,11 +592,11 @@ def get_wishlist_recommendation_view(request):
 
     sim_score = recommender.similarity_from_seeds(selected_idx)
     sim_score[selected_idx] = -1
-    sim_idx = np.argsort(sim_score)[::-1][:10000]
+    sim_idx = np.argsort(sim_score)[::-1][:100]
 
     books = _books_from_positions(sim_idx, required_genre_sets=required_genre_sets)
 
-    with ThreadPoolExecutor(max_workers=10) as executor:
+    with ThreadPoolExecutor(max_workers=2) as executor:
         response_list = list(
             executor.map(
                 lambda book: get_book_detail(
@@ -655,10 +655,10 @@ def get_discover_books_view(request):
     if cached is not None:
         response_list = cached
     else:
-        random_idx = random.sample(range(len(data_store.book_ids)), 500)
+        random_idx = random.sample(range(len(data_store.book_ids)), 100)
         books = _books_from_positions(random_idx)
 
-        with ThreadPoolExecutor(max_workers=10) as executor:
+        with ThreadPoolExecutor(max_workers=2) as executor:
             response_list = list(
                 executor.map(
                     lambda book: get_book_detail(
