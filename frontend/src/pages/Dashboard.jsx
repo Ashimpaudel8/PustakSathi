@@ -16,9 +16,11 @@ function buildViewKey(isDiscover, singleBook, recommendations, isError, search) 
   return `${isDiscover ? "discover" : "search"}::${singleBook?.book_id ?? ""}::${bookIds}::${errorPart}`;
 }
 
+let hasCheckedInitialReload = false;
+
 function Dashboard() {
   const navigate = useNavigate();
-  const navigationType = useNavigationType(); 
+  const navigationType = useNavigationType();
   const { usePersistedState } = usePageState();
   const [recommendations, setRecommendations] = usePersistedState("dashboard.recommendations", []);
   const [isDiscover, setIsDiscover] = usePersistedState("dashboard.isDiscover", true);
@@ -29,6 +31,7 @@ function Dashboard() {
   const location = useLocation();
   const openTitle = location.state?.openTitle;
   const focusSearch = location.state?.focusSearch;
+  const resetToDiscover = location.state?.resetToDiscover;
   const initialOpenTitle = useRef(openTitle);
   const loadingRef = useRef(null);
   const [isError, setIsError] = useState(false);
@@ -42,6 +45,13 @@ function Dashboard() {
 
   useEffect(() => {
     if (navigationType !== "POP") return;
+
+    if (!hasCheckedInitialReload) {
+      hasCheckedInitialReload = true;
+      const navEntry = performance.getEntriesByType("navigation")[0];
+      if (navEntry?.type === "reload") return;
+    }
+
     const snapshot = location.state?.dashboardView;
     if (!snapshot) return;
 
@@ -76,7 +86,7 @@ function Dashboard() {
 
     const isFirstSettle = currentViewKeyRef.current === null;
     const sameView = viewKey === currentViewKeyRef.current;
-    const arrivedViaExplicitNav = Boolean(location.state?.openTitle);
+    const arrivedViaExplicitNav = Boolean(location.state?.openTitle || location.state?.resetToDiscover);
 
     currentViewKeyRef.current = viewKey;
 
@@ -160,6 +170,30 @@ function Dashboard() {
 
     fetchBook();
   }, [openTitle]);
+
+  useEffect(() => {
+    if (!resetToDiscover) return;
+
+    const fetchDiscover = async () => {
+      setIsRecommending(true);
+
+      try {
+        const res = await api.get("/api/discover/");
+        setIsDiscover(true);
+        setSingleBook(null);
+        setSearch("");
+        setIsError(false);
+        setRecommendations(res.data?.Discover_Something_New || []);
+      } catch (err) {
+        console.error(err);
+        setRecommendations([]);
+      } finally {
+        setIsRecommending(false);
+      }
+    };
+
+    fetchDiscover();
+  }, [location.key]);
 
   return (
     <>

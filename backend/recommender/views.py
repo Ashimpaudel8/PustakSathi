@@ -87,13 +87,14 @@ def get_book_detail(book_id, title, author, description, genre, img, link):
     if cached_result is not None:
         return cached_result
 
-    result = _fetch_book_detail_fresh(title, author, description, genre, img, link)
+    result, fetched_externally = _fetch_book_detail_fresh(title, author, description, genre, img, link)
     result["book_id"] = book_id
 
-    found_something = bool(result["thumbnail_url"] or result["thumbnail_id"])
-    timeout = CACHE_TIMEOUT_HIT if found_something else CACHE_TIMEOUT_MISS
+    if fetched_externally:
+        found_something = bool(result["thumbnail_url"] or result["thumbnail_id"])
+        timeout = CACHE_TIMEOUT_HIT if found_something else CACHE_TIMEOUT_MISS
+        cache.set(cache_key, result, timeout)
 
-    cache.set(cache_key, result, timeout)
     return result
 
 def _fetch_book_detail_fresh(title, author, description, genre, img, link):
@@ -160,7 +161,7 @@ def _fetch_book_detail_fresh(title, author, description, genre, img, link):
     data_dict["description"] = volume_info.get("description", description)
 
     if data_dict["thumbnail_url"]:
-        return data_dict
+        return data_dict, True
 
     # ---------- Open Library ----------
     if google_search_title:
@@ -191,12 +192,12 @@ def _fetch_book_detail_fresh(title, author, description, genre, img, link):
                 cover_id = doc.get("cover_i")
                 if cover_id:
                     data_dict["thumbnail_id"] = cover_id
-                    return data_dict
+                    return data_dict, True
 
         except (requests.exceptions.RequestException, ValueError) as e:
             print(f"Failed to fetch data for '{search_title}': {e}")
 
-    return data_dict
+    return data_dict, True
 
 
 def _books_from_positions(positions, limit=8, max_per_author=8, max_per_genre=8, required_genre_sets=None):

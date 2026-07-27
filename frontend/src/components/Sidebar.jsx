@@ -15,6 +15,7 @@ function SideBar() {
       </button>
       <div className="side-link-container">
         <NavLink to="/dashboard"
+          state={{ resetToDiscover: true }}
           className={({ isActive }) =>
             isActive ? "side-link active" : "side-link"
           }>

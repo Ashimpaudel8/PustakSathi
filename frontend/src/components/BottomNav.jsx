@@ -20,6 +20,7 @@ function BottomNav() {
     <nav className={`bottom-nav${profileOpen ? " profile-active" : ""}`}>
       <NavLink
         to="/dashboard"
+        state={{ resetToDiscover: true }}
         className={({ isActive }) => isActive ? "bottom-nav-link active" : "bottom-nav-link"}
       >
         <i className="fa-solid fa-magnifying-glass"></i>

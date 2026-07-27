@@ -56,6 +56,7 @@ const NavBar = () => {
           <span>Read Books: {user.readbooks_count}</span>
           <NavLink
             to="/dashboard"
+            state={{ resetToDiscover: true }}
             className="nav-link"
           >
             Search
