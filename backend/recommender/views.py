@@ -200,7 +200,7 @@ def _fetch_book_detail_fresh(title, author, description, genre, img, link):
     return data_dict, True
 
 
-def _books_from_positions(positions, limit=8, max_per_author=8, max_per_genre=8, required_genre_sets=None):
+def _books_from_positions(positions, limit=16, max_per_author=8, max_per_genre=12, required_genre_sets=None):
     ids_in_order = [data_store.book_ids[p] for p in positions]
     books_by_id = Book.objects.only("id", "title", "author", "genre").in_bulk(ids_in_order)
 
@@ -328,7 +328,7 @@ def get_recommendation_view(request):
 
     sim_score = recommender.similarity_from_seeds(selected_idx)
     sim_score[selected_idx] = -1
-    sim_idx = np.argsort(sim_score)[::-1][:100]
+    sim_idx = np.argsort(sim_score)[::-1][:500]
 
     books = _books_from_positions(sim_idx)
 
@@ -468,7 +468,7 @@ def get_readbooks_recommendation_view(request):
 
     sim_score = recommender.similarity_from_seeds(selected_idx, seed_ratings=seed_weights)
     sim_score[selected_idx] = -1
-    sim_idx = np.argsort(sim_score)[::-1][:100]
+    sim_idx = np.argsort(sim_score)[::-1][:500]
 
     books = _books_from_positions(sim_idx, required_genre_sets=required_genre_sets)
 
@@ -593,7 +593,7 @@ def get_wishlist_recommendation_view(request):
 
     sim_score = recommender.similarity_from_seeds(selected_idx)
     sim_score[selected_idx] = -1
-    sim_idx = np.argsort(sim_score)[::-1][:100]
+    sim_idx = np.argsort(sim_score)[::-1][:500]
 
     books = _books_from_positions(sim_idx, required_genre_sets=required_genre_sets)
 
@@ -656,7 +656,7 @@ def get_discover_books_view(request):
     if cached is not None:
         response_list = cached
     else:
-        random_idx = random.sample(range(len(data_store.book_ids)), 100)
+        random_idx = random.sample(range(len(data_store.book_ids)), 300)
         books = _books_from_positions(random_idx)
 
         with ThreadPoolExecutor(max_workers=2) as executor:
