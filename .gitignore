@@ -55,3 +55,5 @@ Thumbs.db
 test_books.csv
 
 staticfiles/
+
+test.ipynb
