@@ -301,13 +301,6 @@ def _books_from_positions(positions, limit=16, max_per_author=8, max_per_genre=1
 @permission_classes([IsAuthenticated])
 def get_recommendation_view(request):
 
-    # ==================== DEBUG ====================
-    print("========== RECOMMENDER DEBUG ==========")
-    print("DB book count:", Book.objects.count())
-    print("PKL book count:", len(data_store.book_ids) if data_store.book_ids is not None else "NONE")
-    print("=======================================")
-    # ===============================================
-
     title = request.query_params.get("q", "").strip()
     seed_book = Book.objects.filter(title__iexact=title).first()
 

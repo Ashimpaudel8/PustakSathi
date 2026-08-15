@@ -35,9 +35,9 @@ EMBEDDING_MODEL = getattr(settings, "RECOMMENDER_EMBEDDING_MODEL", "e5")
 
 
 TFIDF_N_FEATURES = {
-    "title": 2**13,        # 8,192
-    "description": 2**15,  # 32,768
-    "genre": 2**11,        # 2,048
+    "title": 2**12,
+    "description": 2**13,
+    "genre": 2**10,
 }
 
 WEIGHTS = {
