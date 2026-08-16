@@ -883,9 +883,8 @@ class IsSuperUser(BasePermission):
 
 
 @api_view(["PATCH"])
-@permission_classes([IsSuperUser])
+@permission_classes([IsAdminUser])
 def admin_toggle_staff(request, user_id):
-    """Grants or revokes staff access (i.e. /manage/backend access)."""
     try:
         target_user = User.objects.get(id=user_id)
 
@@ -898,6 +897,17 @@ def admin_toggle_staff(request, user_id):
             return JsonResponse(
                 {"status": "error", "message": "Superuser staff status cannot be changed here."},
                 status=400,
+            )
+
+        is_granting = not target_user.is_staff  # this action would flip is_staff False -> True
+
+        if not request.user.is_superuser and not is_granting:
+            return JsonResponse(
+                {
+                    "status": "error",
+                    "message": "Only a superuser can revoke staff access.",
+                },
+                status=403,
             )
 
         target_user.is_staff = not target_user.is_staff

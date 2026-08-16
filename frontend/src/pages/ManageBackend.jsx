@@ -653,18 +653,25 @@ const ManageBackend = () => {
                     <span className="mb-badge" style={{ background: "var(--blue-bg)", color: "var(--blue-text)" }}>STAFF</span>
                   )}
                 </div>
-                {!user.is_superuser && currentUser?.is_superuser && (
+                {!user.is_superuser && (currentUser?.is_superuser || currentUser?.is_staff) && (
                   <div className="mb-row-actions">
-                    <button
-                      className="mb-btn--ghost"
-                      style={{ color: user.is_staff ? "var(--warn)" : "var(--accent)" }}
-                      onClick={() => handleToggleStaff(user)}
-                    >
-                      {user.is_staff ? "Revoke Staff" : "Make Staff"}
-                    </button>
-                    <button className="mb-btn mb-btn--danger" onClick={() => handleDeleteUser(user.id)}>
-                      Delete
-                    </button>
+                    {/* Superusers can grant AND revoke staff access.
+                        Non-superuser staff can only grant it to non-staff users --
+                        the "Revoke Staff" action is hidden for them entirely. */}
+                    {(currentUser?.is_superuser || !user.is_staff) && (
+                      <button
+                        className="mb-btn--ghost"
+                        style={{ color: user.is_staff ? "var(--warn)" : "var(--accent)" }}
+                        onClick={() => handleToggleStaff(user)}
+                      >
+                        {user.is_staff ? "Revoke Staff" : "Make Staff"}
+                      </button>
+                    )}
+                    {currentUser?.is_superuser && (
+                      <button className="mb-btn mb-btn--danger" onClick={() => handleDeleteUser(user.id)}>
+                        Delete
+                      </button>
+                    )}
                   </div>
                 )}
               </div>
